@@ -56,17 +56,49 @@ export default function Inventory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch inventory items
-  const { data: inventoryItems, isLoading } = useQuery({
+  // Fetch all inventory items
+  const { data: inventoryItems, isLoading: isLoadingInventory } = useQuery({
     queryKey: ['/api/inventory'],
   });
   
-  // Filtered inventory items based on search
-  const filteredItems = inventoryItems
-    ? inventoryItems.filter((item: any) => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  // Fetch low stock items
+  const { data: lowStockItems, isLoading: isLoadingLowStock } = useQuery({
+    queryKey: ['/api/inventory/low-stock'],
+  });
+  
+  // Search inventory items
+  const { data: searchResults, isLoading: isSearching, refetch: searchItems } = useQuery({
+    queryKey: ['/api/inventory/search', searchQuery],
+    queryFn: () => fetch(`/api/inventory/search?q=${encodeURIComponent(searchQuery)}`).then(res => res.json()),
+    enabled: false, // Don't auto-fetch
+  });
+  
+  // Execute search when query changes
+  const debouncedSearch = async () => {
+    if (searchQuery.trim().length > 2) {
+      await searchItems();
+    }
+  };
+  
+  // Handle search query changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Debounce search
+    const timer = setTimeout(() => {
+      if (value.trim().length > 2) {
+        searchItems();
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  };
+  
+  // Determine which items to display
+  const displayItems = searchQuery.trim().length > 2 
+    ? (Array.isArray(searchResults) ? searchResults : [])
+    : (Array.isArray(inventoryItems) ? inventoryItems : []);
   
   // Add inventory item form
   const addForm = useForm<InventoryFormValues>({
@@ -215,14 +247,25 @@ export default function Inventory() {
         <CardHeader className="p-4">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg">Inventory Items</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search items..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+                {isSearching && (
+                  <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              {Array.isArray(lowStockItems) && lowStockItems.length > 0 && (
+                <Badge variant="destructive" className="flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {lowStockItems.length} item{lowStockItems.length > 1 ? 's' : ''} low on stock
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -242,14 +285,14 @@ export default function Inventory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isLoadingInventory || isSearching ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-4">
                       <div className="coffee-loading mx-auto"></div>
                       <p className="mt-2 text-muted-foreground">Loading inventory items...</p>
                     </TableCell>
                   </TableRow>
-                ) : filteredItems.length === 0 ? (
+                ) : displayItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-4">
                       <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-50" />
@@ -259,7 +302,7 @@ export default function Inventory() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item: any) => (
+                  displayItems.map((item: any) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.quantity.toFixed(2)}</TableCell>

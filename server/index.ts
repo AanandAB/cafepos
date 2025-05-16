@@ -36,7 +36,17 @@ app.use((req, res, next) => {
   next();
 });
 
+import { initializeDatabase } from "./db-setup";
+
 (async () => {
+  try {
+    // Initialize the database with default data
+    await initializeDatabase();
+    log("Database initialized successfully", "express");
+  } catch (error) {
+    log(`Database initialization error: ${error}`, "express");
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
