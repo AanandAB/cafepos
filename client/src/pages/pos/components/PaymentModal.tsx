@@ -140,7 +140,9 @@ export default function PaymentModal({
           orderId: orderData.id,
           menuItemId: item.menuItemId,
           quantity: item.quantity,
-          notes: item.notes
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          notes: item.notes || null
         })
       );
       
@@ -278,30 +280,25 @@ export default function PaymentModal({
                 
                 {!upiPaymentReceived ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">
-                      {waitingForUpiPayment 
-                        ? "Verifying payment..." 
-                        : "Enter transaction ID after customer makes payment"}
-                    </p>
-                    <Input
-                      id="upi-transaction"
-                      placeholder="UPI Transaction ID"
-                      value={upiTransactionId}
-                      onChange={(e) => setUpiTransactionId(e.target.value)}
-                      required={paymentMethod === "upi"}
-                      disabled={waitingForUpiPayment}
-                    />
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-md text-center">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Waiting for payment of ₹{finalTotal.toFixed(2)}...
+                      </p>
+                      <p className="text-xs mt-1">
+                        The system will automatically detect payment
+                      </p>
+                    </div>
                     {waitingForUpiPayment && (
                       <div className="flex items-center justify-center py-2">
                         <Loader2 className="h-5 w-5 animate-spin text-blue-500 mr-2" />
-                        <span className="text-sm">Waiting for payment confirmation...</span>
+                        <span className="text-sm">Listening for payment notification...</span>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="p-2 bg-green-100 dark:bg-green-900 rounded-md text-center">
                     <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                      Payment Received ✓
+                      Payment of ₹{finalTotal.toFixed(2)} Received ✓
                     </p>
                   </div>
                 )}
