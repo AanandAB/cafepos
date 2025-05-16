@@ -22,6 +22,7 @@ type PaymentModalProps = {
   selectedTable: number | null;
   total: number;
   onSuccess: () => void;
+  isTakeaway?: boolean;
 };
 
 export default function PaymentModal({
@@ -30,13 +31,18 @@ export default function PaymentModal({
   cart,
   selectedTable,
   total,
-  onSuccess
+  onSuccess,
+  isTakeaway = false
 }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "upi" | "other">("cash");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerGstin, setCustomerGstin] = useState("");
   const [printReceipt, setPrintReceipt] = useState(true);
+  const [upiId, setUpiId] = useState("");
+  const [upiTransactionId, setUpiTransactionId] = useState("");
+  const [waitingForUpiPayment, setWaitingForUpiPayment] = useState(false);
+  const [upiPaymentReceived, setUpiPaymentReceived] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -44,17 +50,53 @@ export default function PaymentModal({
   
   const { subtotal, cgst, sgst, total: finalTotal } = gstCalculator(total);
   
+  // Simulate UPI payment check (in a real app, this would connect to a payment gateway)
+  const checkUpiPaymentStatus = async () => {
+    // This is a placeholder for actual UPI payment verification
+    // In a production environment, you would integrate with a payment gateway
+    // and check if the payment has been received
+    
+    return new Promise<boolean>((resolve) => {
+      // Simulate a network request
+      setTimeout(() => {
+        // Simulate successful payment
+        if (upiTransactionId.trim()) {
+          setUpiPaymentReceived(true);
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }, 1500);
+    });
+  };
+  
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async () => {
+      // For UPI payments, verify payment first
+      if (paymentMethod === "upi" && !upiPaymentReceived) {
+        const paymentSuccess = await checkUpiPaymentStatus();
+        if (!paymentSuccess) {
+          throw new Error("UPI payment verification failed. Please check the transaction ID.");
+        }
+      }
+      
+      // Include isTakeaway flag and UPI information if applicable
+      const upiData = paymentMethod === "upi" ? {
+        upiId: upiId || null,
+        transactionId: upiTransactionId || null
+      } : {};
+      
       // First create the order
       const orderResponse = await apiRequest("POST", "/api/orders", {
-        tableId: selectedTable,
+        tableId: isTakeaway ? null : selectedTable,
         status: "pending",
         paymentMethod,
         customerName: customerName || null,
         customerPhone: customerPhone || null,
-        customerGstin: customerGstin || null
+        customerGstin: customerGstin || null,
+        isTakeaway: isTakeaway,
+        ...upiData
       });
       
       const orderData = await orderResponse.json();
@@ -124,7 +166,16 @@ export default function PaymentModal({
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createOrderMutation.mutate();
+    
+    // For UPI payments, first check payment status if not already verified
+    if (paymentMethod === "upi" && !upiPaymentReceived) {
+      setWaitingForUpiPayment(true);
+      
+      // This will be automatically handled in the mutation
+      createOrderMutation.mutate();
+    } else {
+      createOrderMutation.mutate();
+    }
   };
   
   return (
@@ -180,19 +231,65 @@ export default function PaymentModal({
               </RadioGroup>
             </div>
             
+            {/* UPI Payment Details (only shown when UPI payment method is selected) */}
+            {paymentMethod === "upi" && (
+              <div className="space-y-2 border-2 border-blue-100 dark:border-blue-900 p-3 rounded-md">
+                <Label htmlFor="upi-id" className="text-sm font-medium">UPI Payment Details</Label>
+                <Input
+                  id="upi-id"
+                  placeholder="Your UPI ID (e.g. name@upi)"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  required={paymentMethod === "upi"}
+                />
+                
+                {!upiPaymentReceived ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      {waitingForUpiPayment 
+                        ? "Verifying payment..." 
+                        : "Enter transaction ID after customer makes payment"}
+                    </p>
+                    <Input
+                      id="upi-transaction"
+                      placeholder="UPI Transaction ID"
+                      value={upiTransactionId}
+                      onChange={(e) => setUpiTransactionId(e.target.value)}
+                      required={paymentMethod === "upi"}
+                      disabled={waitingForUpiPayment}
+                    />
+                    {waitingForUpiPayment && (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-500 mr-2" />
+                        <span className="text-sm">Waiting for payment confirmation...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-md text-center">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Payment Received ✓
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label htmlFor="customer-name" className="text-sm font-medium">Customer Details (Optional)</Label>
+              <Label htmlFor="customer-name" className="text-sm font-medium">Customer Details {isTakeaway ? "(Required for Takeaway)" : "(Optional)"}</Label>
               <Input
                 id="customer-name"
                 placeholder="Customer Name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
+                required={isTakeaway}
               />
               <Input
                 id="customer-phone"
                 placeholder="Phone Number"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
+                required={isTakeaway}
               />
               <Input
                 id="customer-gstin"
@@ -217,11 +314,19 @@ export default function PaymentModal({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createOrderMutation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={createOrderMutation.isPending || (paymentMethod === "upi" && waitingForUpiPayment && !upiPaymentReceived)}
+            >
               {createOrderMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
+                </>
+              ) : paymentMethod === "upi" && !upiPaymentReceived ? (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Verify UPI Payment
                 </>
               ) : (
                 <>

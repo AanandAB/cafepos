@@ -183,6 +183,7 @@ export default function PosLayout() {
         selectedTable={selectedTable}
         total={cartTotal}
         onSuccess={handleClearCart}
+        isTakeaway={isTakeaway}
       />
     </div>
   );
