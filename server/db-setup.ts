@@ -15,8 +15,8 @@ export async function initializeDatabase() {
   try {
     console.log('Initializing database...');
     
-    // Run migrations if needed
-    await migrate(db, { migrationsFolder: 'drizzle' });
+    // Skip migrations as we don't have them set up yet
+    // await migrate(db, { migrationsFolder: 'drizzle' });
     
     // Seed default admin user if none exists
     const existingUsers = await db.select().from(users);
@@ -48,14 +48,14 @@ export async function initializeDatabase() {
     const existingMenuItems = await db.select().from(menuItems);
     if (existingMenuItems.length === 0) {
       console.log('Seeding default menu items...');
-      const categories = await db.select().from(categories);
-      const categoryMap = categories.reduce((map: Record<string, number>, category) => {
+      const categoryList = await db.select().from(categories);
+      const categoryMap = categoryList.reduce((map: Record<string, number>, category) => {
         map[category.name] = category.id;
         return map;
       }, {});
 
       // Add sample menu items
-      if (categories.length > 0) {
+      if (categoryList.length > 0) {
         await db.insert(menuItems).values([
           {
             name: 'Filter Coffee',
