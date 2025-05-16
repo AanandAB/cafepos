@@ -603,4 +603,402 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq, and, like, gte, lte, desc, asc, isNull, not } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+  
+  // Category methods
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, id));
+    return category;
+  }
+  
+  async getCategories(): Promise<Category[]> {
+    return db.select().from(categories);
+  }
+  
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db
+      .insert(categories)
+      .values(insertCategory)
+      .returning();
+    return category;
+  }
+  
+  async updateCategory(id: number, data: Partial<InsertCategory>): Promise<Category | undefined> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set(data)
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    const result = await db
+      .delete(categories)
+      .where(eq(categories.id, id))
+      .returning({ id: categories.id });
+    return result.length > 0;
+  }
+  
+  // MenuItem methods
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    const [menuItem] = await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.id, id));
+    return menuItem;
+  }
+  
+  async getMenuItems(): Promise<MenuItem[]> {
+    return db.select().from(menuItems);
+  }
+  
+  async getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]> {
+    return db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.categoryId, categoryId));
+  }
+  
+  async createMenuItem(insertMenuItem: InsertMenuItem): Promise<MenuItem> {
+    const [menuItem] = await db
+      .insert(menuItems)
+      .values(insertMenuItem)
+      .returning();
+    return menuItem;
+  }
+  
+  async updateMenuItem(id: number, data: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    const [updatedMenuItem] = await db
+      .update(menuItems)
+      .set(data)
+      .where(eq(menuItems.id, id))
+      .returning();
+    return updatedMenuItem;
+  }
+  
+  async deleteMenuItem(id: number): Promise<boolean> {
+    const result = await db
+      .delete(menuItems)
+      .where(eq(menuItems.id, id))
+      .returning({ id: menuItems.id });
+    return result.length > 0;
+  }
+  
+  // Inventory methods
+  async getInventoryItem(id: number): Promise<InventoryItem | undefined> {
+    const [inventoryItem] = await db
+      .select()
+      .from(inventoryItems)
+      .where(eq(inventoryItems.id, id));
+    return inventoryItem;
+  }
+  
+  async getInventoryItems(): Promise<InventoryItem[]> {
+    return db.select().from(inventoryItems);
+  }
+  
+  async searchInventoryItems(query: string): Promise<InventoryItem[]> {
+    return db
+      .select()
+      .from(inventoryItems)
+      .where(like(inventoryItems.name, `%${query}%`));
+  }
+  
+  async getLowStockItems(): Promise<InventoryItem[]> {
+    return db
+      .select()
+      .from(inventoryItems)
+      .where(
+        and(
+          gte(inventoryItems.alertThreshold, 0),
+          lte(inventoryItems.quantity, inventoryItems.alertThreshold)
+        )
+      );
+  }
+  
+  async createInventoryItem(insertItem: InsertInventoryItem): Promise<InventoryItem> {
+    const [inventoryItem] = await db
+      .insert(inventoryItems)
+      .values(insertItem)
+      .returning();
+    return inventoryItem;
+  }
+  
+  async updateInventoryItem(id: number, data: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
+    const [updatedItem] = await db
+      .update(inventoryItems)
+      .set(data)
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deleteInventoryItem(id: number): Promise<boolean> {
+    const result = await db
+      .delete(inventoryItems)
+      .where(eq(inventoryItems.id, id))
+      .returning({ id: inventoryItems.id });
+    return result.length > 0;
+  }
+  
+  // Table methods
+  async getTable(id: number): Promise<Table | undefined> {
+    const [table] = await db
+      .select()
+      .from(tables)
+      .where(eq(tables.id, id));
+    return table;
+  }
+  
+  async getTables(): Promise<Table[]> {
+    return db.select().from(tables);
+  }
+  
+  async createTable(insertTable: InsertTable): Promise<Table> {
+    const [table] = await db
+      .insert(tables)
+      .values(insertTable)
+      .returning();
+    return table;
+  }
+  
+  async updateTable(id: number, data: Partial<InsertTable>): Promise<Table | undefined> {
+    const [updatedTable] = await db
+      .update(tables)
+      .set(data)
+      .where(eq(tables.id, id))
+      .returning();
+    return updatedTable;
+  }
+  
+  async deleteTable(id: number): Promise<boolean> {
+    const result = await db
+      .delete(tables)
+      .where(eq(tables.id, id))
+      .returning({ id: tables.id });
+    return result.length > 0;
+  }
+  
+  // Order methods
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    return order;
+  }
+  
+  async getOrders(): Promise<Order[]> {
+    return db
+      .select()
+      .from(orders)
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getActiveOrders(): Promise<Order[]> {
+    return db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          not(eq(orders.status, 'completed')),
+          not(eq(orders.status, 'cancelled'))
+        )
+      )
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrdersByDateRange(startDate: Date, endDate: Date): Promise<Order[]> {
+    return db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          gte(orders.createdAt, startDate),
+          lte(orders.createdAt, endDate)
+        )
+      )
+      .orderBy(desc(orders.createdAt));
+  }
+  
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db
+      .insert(orders)
+      .values(insertOrder)
+      .returning();
+    return order;
+  }
+  
+  async updateOrder(id: number, data: Partial<InsertOrder>): Promise<Order | undefined> {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(data)
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+  
+  async deleteOrder(id: number): Promise<boolean> {
+    const result = await db
+      .delete(orders)
+      .where(eq(orders.id, id))
+      .returning({ id: orders.id });
+    return result.length > 0;
+  }
+  
+  // OrderItem methods
+  async getOrderItem(id: number): Promise<OrderItem | undefined> {
+    const [orderItem] = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.id, id));
+    return orderItem;
+  }
+  
+  async getOrderItemsByOrder(orderId: number): Promise<OrderItem[]> {
+    return db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+  }
+  
+  async createOrderItem(insertItem: InsertOrderItem): Promise<OrderItem> {
+    const [orderItem] = await db
+      .insert(orderItems)
+      .values(insertItem)
+      .returning();
+    return orderItem;
+  }
+  
+  async updateOrderItem(id: number, data: Partial<InsertOrderItem>): Promise<OrderItem | undefined> {
+    const [updatedItem] = await db
+      .update(orderItems)
+      .set(data)
+      .where(eq(orderItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deleteOrderItem(id: number): Promise<boolean> {
+    const result = await db
+      .delete(orderItems)
+      .where(eq(orderItems.id, id))
+      .returning({ id: orderItems.id });
+    return result.length > 0;
+  }
+  
+  // EmployeeShift methods
+  async getEmployeeShift(id: number): Promise<EmployeeShift | undefined> {
+    const [shift] = await db
+      .select()
+      .from(employeeShifts)
+      .where(eq(employeeShifts.id, id));
+    return shift;
+  }
+  
+  async getEmployeeShiftsByUser(userId: number): Promise<EmployeeShift[]> {
+    return db
+      .select()
+      .from(employeeShifts)
+      .where(eq(employeeShifts.userId, userId))
+      .orderBy(desc(employeeShifts.clockIn));
+  }
+  
+  async getActiveEmployeeShifts(): Promise<EmployeeShift[]> {
+    return db
+      .select()
+      .from(employeeShifts)
+      .where(isNull(employeeShifts.clockOut))
+      .orderBy(desc(employeeShifts.clockIn));
+  }
+  
+  async createEmployeeShift(insertShift: InsertEmployeeShift): Promise<EmployeeShift> {
+    const [shift] = await db
+      .insert(employeeShifts)
+      .values(insertShift)
+      .returning();
+    return shift;
+  }
+  
+  async updateEmployeeShift(id: number, data: Partial<InsertEmployeeShift>): Promise<EmployeeShift | undefined> {
+    const [updatedShift] = await db
+      .update(employeeShifts)
+      .set(data)
+      .where(eq(employeeShifts.id, id))
+      .returning();
+    return updatedShift;
+  }
+  
+  // Settings methods
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, key));
+    return setting;
+  }
+  
+  async getSettings(): Promise<Setting[]> {
+    return db.select().from(settings);
+  }
+  
+  async createOrUpdateSetting(insertSetting: InsertSetting): Promise<Setting> {
+    // Check if setting exists
+    const existingSetting = await this.getSetting(insertSetting.key);
+    
+    if (existingSetting) {
+      // Update existing
+      const [updatedSetting] = await db
+        .update(settings)
+        .set(insertSetting)
+        .where(eq(settings.key, insertSetting.key))
+        .returning();
+      return updatedSetting;
+    } else {
+      // Create new
+      const [newSetting] = await db
+        .insert(settings)
+        .values(insertSetting)
+        .returning();
+      return newSetting;
+    }
+  }
+}
+
+// Initialize DatabaseStorage to use the PostgreSQL database
+export const storage = new DatabaseStorage();

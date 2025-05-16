@@ -343,6 +343,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Search inventory items
+  app.get('/api/inventory/search', isAuthenticated, async (req, res, next) => {
+    try {
+      const query = req.query.q as string || "";
+      if (!query.trim()) {
+        return res.json([]);
+      }
+      const results = await storage.searchInventoryItems(query);
+      res.json(results);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get low stock inventory items
+  app.get('/api/inventory/low-stock', isAuthenticated, async (req, res, next) => {
+    try {
+      const lowStockItems = await storage.getLowStockItems();
+      res.json(lowStockItems);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   app.post('/api/inventory', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
       const result = insertInventoryItemSchema.safeParse(req.body);
