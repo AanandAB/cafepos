@@ -7,8 +7,9 @@ import {
   Order, InsertOrder,
   OrderItem, InsertOrderItem,
   EmployeeShift, InsertEmployeeShift,
+  Expense, InsertExpense,
   Setting, InsertSetting,
-  users, categories, menuItems, inventoryItems, tables, orders, orderItems, employeeShifts, settings
+  users, categories, menuItems, inventoryItems, tables, orders, orderItems, employeeShifts, expenses, settings
 } from "@shared/schema";
 
 export interface IStorage {
@@ -71,6 +72,14 @@ export interface IStorage {
   createEmployeeShift(shift: InsertEmployeeShift): Promise<EmployeeShift>;
   updateEmployeeShift(id: number, shift: Partial<InsertEmployeeShift>): Promise<EmployeeShift | undefined>;
   
+  // Expense methods
+  getExpense(id: number): Promise<Expense | undefined>;
+  getExpenses(): Promise<Expense[]>;
+  getExpensesByDateRange(startDate: Date, endDate: Date): Promise<Expense[]>;
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
+  deleteExpense(id: number): Promise<boolean>;
+  
   // Settings methods
   getSetting(key: string): Promise<Setting | undefined>;
   getSettings(): Promise<Setting[]>;
@@ -86,6 +95,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private employeeShifts: Map<number, EmployeeShift>;
+  private expenses: Map<number, Expense>;
   private settings: Map<number, Setting>;
   
   private currentUserId: number = 1;
@@ -96,6 +106,7 @@ export class MemStorage implements IStorage {
   private currentOrderId: number = 1;
   private currentOrderItemId: number = 1;
   private currentEmployeeShiftId: number = 1;
+  private currentExpenseId: number = 1;
   private currentSettingId: number = 1;
 
   constructor() {

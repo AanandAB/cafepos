@@ -184,6 +184,9 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type EmployeeShift = typeof employeeShifts.$inferSelect;
 export type InsertEmployeeShift = z.infer<typeof insertEmployeeShiftSchema>;
 
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 

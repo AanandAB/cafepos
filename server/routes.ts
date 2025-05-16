@@ -715,6 +715,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Expense routes
+  app.get('/api/expenses', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (startDate && endDate) {
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return res.status(400).json({ message: "Invalid date format" });
+        }
+        
+        // Get expenses in date range - implement in storage
+        // For now, we'll just return all expenses
+        const expenses = await storage.getExpenses();
+        
+        const expensesInRange = expenses.filter(expense => {
+          const expenseDate = new Date(expense.date);
+          return expenseDate >= start && expenseDate <= end;
+        });
+        
+        res.json(expensesInRange);
+      } else {
+        // Get all expenses
+        const expenses = await storage.getExpenses();
+        res.json(expenses);
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.post('/api/expenses', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const result = insertExpenseSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
+      }
+      
+      // Add the user ID from the authenticated user
+      const user = req.user as any;
+      const expenseData = {
+        ...result.data,
+        userId: user.id
+      };
+      
+      const expense = await storage.createExpense(expenseData);
+      res.status(201).json(expense);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.get('/api/expenses/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const expense = await storage.getExpense(id);
+      
+      if (!expense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+      
+      res.json(expense);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.put('/api/expenses/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = insertExpenseSchema.partial().safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
+      }
+      
+      const updatedExpense = await storage.updateExpense(id, result.data);
+      if (!updatedExpense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+      
+      res.json(updatedExpense);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.delete('/api/expenses/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteExpense(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+      
+      res.json({ message: "Expense deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Reports route
   app.get('/api/reports/sales', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
@@ -733,9 +837,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const orders = await storage.getOrdersByDateRange(start, end);
       
+      // Get expenses for the same period
+      const expenses = await storage.getExpenses();
+      const expensesInRange = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= start && expenseDate <= end;
+      });
+      
       // Calculate totals
       const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
       const totalTax = orders.reduce((sum, order) => sum + order.taxAmount, 0);
+      const totalExpenses = expensesInRange.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalProfit = totalSales - totalExpenses;
       
       // Group by payment method
       const paymentMethodTotals: Record<string, number> = {};
@@ -745,14 +858,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
+      // Group expenses by category
+      const expenseCategoryTotals: Record<string, number> = {};
+      expensesInRange.forEach(expense => {
+        if (expense.category) {
+          expenseCategoryTotals[expense.category] = (expenseCategoryTotals[expense.category] || 0) + expense.amount;
+        }
+      });
+      
       res.json({
         startDate: start,
         endDate: end,
         totalOrders: orders.length,
         totalSales,
         totalTax,
+        totalExpenses,
+        totalProfit,
         paymentMethodTotals,
-        orders
+        expenseCategoryTotals,
+        orders,
+        expenses: expensesInRange
       });
     } catch (error) {
       next(error);
