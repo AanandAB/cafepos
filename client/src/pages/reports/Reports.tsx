@@ -93,6 +93,17 @@ export default function Reports() {
   // Fetch sales data for the selected date range
   const { data: salesData, isLoading } = useQuery({
     queryKey: ['/api/reports/sales', dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: dateRange.from.toISOString(),
+        endDate: dateRange.to.toISOString()
+      });
+      const response = await fetch(`/api/reports/sales?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch sales data');
+      }
+      return response.json();
+    }
   });
   
   // Prepare data for sales by payment method chart

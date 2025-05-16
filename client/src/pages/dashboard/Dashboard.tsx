@@ -74,6 +74,17 @@ export default function Dashboard() {
   // Fetch dashboard data
   const { data: salesData, isLoading: isSalesLoading } = useQuery({
     queryKey: ['/api/reports/sales', startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: startDate,
+        endDate: endDate
+      });
+      const response = await fetch(`/api/reports/sales?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch sales data');
+      }
+      return response.json();
+    },
     enabled: user && ['admin', 'manager'].includes(user.role)
   });
   

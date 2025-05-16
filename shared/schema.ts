@@ -7,6 +7,7 @@ export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'staff', 'c
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'preparing', 'completed', 'cancelled']);
 export const paymentMethodEnum = pgEnum('payment_method', ['cash', 'card', 'upi', 'other']);
 export const taxTypeEnum = pgEnum('tax_type', ['cgst_sgst', 'igst']);
+export const expenseCategoryEnum = pgEnum('expense_category', ['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other']);
 
 // Users Table
 export const users = pgTable("users", {
@@ -128,6 +129,22 @@ export const employeeShifts = pgTable("employee_shifts", {
 export const insertEmployeeShiftSchema = createInsertSchema(employeeShifts).omit({
   id: true,
   clockIn: true,
+});
+
+// Expenses Table
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  description: text("description").notNull(),
+  amount: doublePrecision("amount").notNull(),
+  category: expenseCategoryEnum("category").notNull().default('other'),
+  date: timestamp("date").notNull().defaultNow(),
+  userId: integer("user_id").references(() => users.id),
+  notes: text("notes"),
+  receiptUrl: text("receipt_url"),
+});
+
+export const insertExpenseSchema = createInsertSchema(expenses).omit({
+  id: true,
 });
 
 // Settings Table
