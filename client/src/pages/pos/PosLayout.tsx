@@ -24,6 +24,7 @@ export default function PosLayout() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isTakeaway, setIsTakeaway] = useState(false);
   
   const { toast } = useToast();
   
@@ -107,16 +108,24 @@ export default function PosLayout() {
       return;
     }
     
-    if (!selectedTable) {
+    if (!selectedTable && !isTakeaway) {
       toast({
         variant: "destructive",
         title: "No table selected",
-        description: "Please select a table for the order."
+        description: "Please select a table for the order or use takeaway option."
       });
       return;
     }
     
     setIsPaymentModalOpen(true);
+  };
+  
+  const handleTakeawayToggle = (takeawayState: boolean) => {
+    setIsTakeaway(takeawayState);
+    // If switching to takeaway, clear table selection
+    if (takeawayState) {
+      setSelectedTable(null);
+    }
   };
   
   const cartTotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -161,6 +170,8 @@ export default function PosLayout() {
             onRemoveItem={handleRemoveCartItem}
             onClearCart={handleClearCart}
             onPayment={handlePayment}
+            isTakeaway={isTakeaway}
+            onTakeawayToggle={handleTakeawayToggle}
           />
         </div>
       </div>

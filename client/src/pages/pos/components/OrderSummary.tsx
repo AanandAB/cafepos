@@ -14,6 +14,8 @@ type OrderSummaryProps = {
   onRemoveItem: (id: number) => void;
   onClearCart: () => void;
   onPayment: () => void;
+  isTakeaway?: boolean;
+  onTakeawayToggle?: (isTakeaway: boolean) => void;
 };
 
 export default function OrderSummary({
@@ -22,7 +24,9 @@ export default function OrderSummary({
   onUpdateItem,
   onRemoveItem,
   onClearCart,
-  onPayment
+  onPayment,
+  isTakeaway = false,
+  onTakeawayToggle
 }: OrderSummaryProps) {
   // Fetch table information if a table is selected
   const { data: tableInfo } = useQuery({
@@ -37,13 +41,31 @@ export default function OrderSummary({
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="py-3 px-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <CardTitle className="text-lg">Order Summary</CardTitle>
-          {selectedTable && (
-            <div className="text-sm px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">
-              Table: {tableInfo?.name || selectedTable}
+          <div className="flex flex-col items-end gap-2">
+            {selectedTable && !isTakeaway && (
+              <div className="text-sm px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">
+                Table: {tableInfo?.name || selectedTable}
+              </div>
+            )}
+            {isTakeaway && (
+              <div className="text-sm px-2 py-1 bg-green-100 dark:bg-green-900 rounded">
+                Takeaway Order
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs">Takeaway:</span>
+              <button 
+                onClick={() => onTakeawayToggle?.(!isTakeaway)} 
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${isTakeaway ? 'bg-green-500' : 'bg-gray-300'}`}
+              >
+                <span 
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isTakeaway ? 'translate-x-4' : 'translate-x-0'}`}
+                />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </CardHeader>
       
