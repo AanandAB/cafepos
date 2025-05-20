@@ -753,19 +753,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Add the user ID from the authenticated user
+      // Add the user ID from the authenticated user and ensure date is a proper Date object
       const user = req.user as any;
       const expenseData = {
         ...req.body,
         userId: user.id,
-        date: req.body.date || new Date()
+        // Ensure date is a proper Date object
+        date: new Date()
       };
       
       const expense = await storage.createExpense(expenseData);
       res.status(201).json(expense);
     } catch (error) {
       console.error("Error creating expense:", error);
-      next(error);
+      res.status(500).json({ message: `Failed to add expense: ${error.message}` });
     }
   });
   

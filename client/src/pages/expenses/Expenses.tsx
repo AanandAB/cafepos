@@ -81,7 +81,6 @@ const expenseFormSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be a positive number.' }),
   category: z.enum(['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other']),
-  date: z.date().optional().default(() => new Date()),
   notes: z.string().optional().default(''),
 });
 

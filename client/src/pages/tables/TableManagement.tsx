@@ -34,8 +34,8 @@ export default function TableManagement() {
   const [newTableName, setNewTableName] = useState("");
   const [newTableCapacity, setNewTableCapacity] = useState<number | null>(null);
   
-  // Fetch all tables
-  const { data: tables, isLoading } = useQuery({
+  // Fetch all tables with refetch functionality
+  const { data: tables, isLoading, refetch } = useQuery({
     queryKey: ['/api/tables'],
     queryFn: async () => {
       const response = await fetch('/api/tables');
@@ -43,7 +43,8 @@ export default function TableManagement() {
         throw new Error('Failed to fetch tables');
       }
       return response.json();
-    }
+    },
+    refetchInterval: 2000 // Auto refresh every 2 seconds
   });
   
   // Toggle table occupation status
@@ -63,12 +64,22 @@ export default function TableManagement() {
         throw new Error('Failed to update table status');
       }
       
-      // Force refetch the data instead of just invalidating
-      await queryClient.fetchQuery({ queryKey: ['/api/tables'] });
+      // Force refresh tables immediately
+      await refetch();
+      
+      // Update UI immediately to avoid waiting for the refetch interval
+      // This gives instant feedback to users
+      const newStatus = !currentStatus;
+      const updatedTables = tables?.map(table => 
+        table.id === tableId ? {...table, occupied: newStatus} : table
+      );
+      
+      // Force the component to re-render with updated data
+      queryClient.setQueryData(['/api/tables'], updatedTables);
       
       toast({
         title: "Table status updated",
-        description: `Table marked as ${!currentStatus ? 'occupied' : 'available'}.`,
+        description: `Table marked as ${newStatus ? 'occupied' : 'available'}.`,
       });
     } catch (error) {
       console.error("Error updating table status:", error);
