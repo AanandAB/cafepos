@@ -92,8 +92,12 @@ export default function Reports() {
   
   // Fetch sales data for the selected date range
   const { data: salesData, isLoading } = useQuery({
-    queryKey: ['/api/reports/sales', dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey: ['/api/reports/sales', dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
+      if (!dateRange?.from || !dateRange?.to) {
+        throw new Error('Invalid date range');
+      }
+      
       const params = new URLSearchParams({
         startDate: dateRange.from.toISOString(),
         endDate: dateRange.to.toISOString()
@@ -103,7 +107,8 @@ export default function Reports() {
         throw new Error('Failed to fetch sales data');
       }
       return response.json();
-    }
+    },
+    enabled: !!dateRange?.from && !!dateRange?.to
   });
   
   // Prepare data for sales by payment method chart

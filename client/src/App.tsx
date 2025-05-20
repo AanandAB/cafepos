@@ -14,6 +14,7 @@ import Employees from "@/pages/employees/Employees";
 import Reports from "@/pages/reports/Reports";
 import Settings from "@/pages/settings/Settings";
 import Expenses from "@/pages/expenses/Expenses";
+import ShiftManagement from "@/pages/shifts/ShiftManagement";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
