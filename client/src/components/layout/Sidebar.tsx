@@ -59,6 +59,12 @@ export default function Sidebar() {
       roles: ["admin", "manager", "staff", "cashier"]
     },
     {
+      href: "/tables",
+      label: "Tables",
+      icon: <Coffee className="h-5 w-5" />,
+      roles: ["admin", "manager", "staff"]
+    },
+    {
       href: "/inventory",
       label: "Inventory",
       icon: <Package className="h-5 w-5" />,
