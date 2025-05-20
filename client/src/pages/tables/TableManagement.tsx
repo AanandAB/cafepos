@@ -49,12 +49,14 @@ export default function TableManagement() {
   // Toggle table occupation status
   const handleToggleStatus = async (tableId: number, currentStatus: boolean) => {
     try {
-      await apiRequest({
+      await fetch(`/api/tables/${tableId}`, {
         method: "PATCH",
-        url: `/api/tables/${tableId}`,
-        data: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           occupied: !currentStatus
-        }
+        })
       });
       
       // Invalidate cache to refresh data
@@ -85,14 +87,16 @@ export default function TableManagement() {
     }
     
     try {
-      await apiRequest({
+      await fetch("/api/tables", {
         method: "POST",
-        url: "/api/tables",
-        data: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           name: newTableName.trim(),
           capacity: newTableCapacity,
           occupied: false
-        }
+        })
       });
       
       // Invalidate cache to refresh data
@@ -121,13 +125,15 @@ export default function TableManagement() {
     if (!selectedTable) return;
     
     try {
-      await apiRequest({
+      await fetch(`/api/tables/${selectedTable.id}`, {
         method: "PATCH",
-        url: `/api/tables/${selectedTable.id}`,
-        data: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           name: newTableName.trim() || selectedTable.name,
           capacity: newTableCapacity !== null ? newTableCapacity : selectedTable.capacity
-        }
+        })
       });
       
       // Invalidate cache to refresh data
@@ -157,9 +163,8 @@ export default function TableManagement() {
     if (!confirm("Are you sure you want to delete this table?")) return;
     
     try {
-      await apiRequest({
-        method: "DELETE",
-        url: `/api/tables/${tableId}`
+      await fetch(`/api/tables/${tableId}`, {
+        method: "DELETE"
       });
       
       // Invalidate cache to refresh data
