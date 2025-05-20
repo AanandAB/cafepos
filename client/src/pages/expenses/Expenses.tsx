@@ -79,9 +79,10 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 // Form schema for adding/editing expenses
 const expenseFormSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
-  amount: z.number().positive({ message: 'Amount must be a positive number.' }),
+  amount: z.coerce.number().positive({ message: 'Amount must be a positive number.' }),
   category: z.enum(['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other']),
-  notes: z.string().optional(),
+  date: z.date().optional().default(() => new Date()),
+  notes: z.string().optional().default(''),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
