@@ -7,7 +7,8 @@ import {
   menuItems,
   inventoryItems,
   tables,
-  settings
+  settings,
+  expenses
 } from '@shared/schema';
 
 // Initialize database with default data
@@ -154,6 +155,46 @@ export async function initializeDatabase() {
         { key: 'cafe_email', value: 'contact@cafepos.com', type: 'string' },
         { key: 'gstin', value: '29AABCU9603R1ZR', type: 'string' },
         { key: 'theme_color', value: '#8B5A2B', type: 'string' }
+      ]);
+    }
+    
+    // Add some sample expenses if none exist
+    const existingExpenses = await db.select().from(expenses);
+    if (existingExpenses.length === 0) {
+      console.log('Seeding sample expenses...');
+      await db.insert(expenses).values([
+        {
+          description: 'Monthly Rent',
+          amount: 25000,
+          category: 'rent',
+          date: new Date(new Date().setDate(new Date().getDate() - 15)), 
+          notes: 'May 2025 café rent',
+          userId: 1
+        },
+        {
+          description: 'Coffee Beans Inventory',
+          amount: 12000,
+          category: 'inventory',
+          date: new Date(new Date().setDate(new Date().getDate() - 10)), 
+          notes: 'Premium arabica coffee beans',
+          userId: 1
+        },
+        {
+          description: 'Staff Salary',
+          amount: 18000,
+          category: 'salary',
+          date: new Date(new Date().setDate(new Date().getDate() - 5)), 
+          notes: 'Kitchen staff monthly salary',
+          userId: 1
+        },
+        {
+          description: 'Electricity Bill',
+          amount: 4500,
+          category: 'utilities',
+          date: new Date(new Date().setDate(new Date().getDate() - 3)), 
+          notes: 'May 2025 electricity bill',
+          userId: 1
+        }
       ]);
     }
 
