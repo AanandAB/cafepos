@@ -22,6 +22,18 @@ export default function MenuItems({ categories, isLoading, onAddToCart }: MenuIt
     queryKey: activeCategory 
       ? ['/api/menu-items/category', activeCategory]
       : ['/api/menu-items'],
+    // Use the correct URL format for category filtering
+    queryFn: async ({ queryKey }) => {
+      const [baseUrl, categoryId] = queryKey;
+      const url = categoryId 
+        ? `/api/menu-items/category/${categoryId}` 
+        : '/api/menu-items';
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    },
     refetchInterval: 10000 // Refresh every 10 seconds to keep stock updated
   });
   
