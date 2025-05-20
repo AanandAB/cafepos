@@ -118,14 +118,15 @@ export default function PosLayout() {
   
   const handleClearCart = () => {
     setCart([]);
-    setSelectedTable(null);
+    // Don't clear the selected table when clearing cart
+    // as this can unintentionally mark occupied tables as available
     setActiveOrder(null);
   };
   
   const handleTableSelect = (tableId: number) => {
     setSelectedTable(tableId);
     
-    // Check if table is already occupied
+    // Check if table is already occupied - if not, mark it as occupied
     if (tables) {
       const tableArray = Array.isArray(tables) ? tables : [];
       const selectedTableObj = tableArray.find((table: any) => table.id === tableId);

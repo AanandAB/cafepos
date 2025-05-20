@@ -148,15 +148,21 @@ export default function PaymentModal({
       
       await Promise.all(orderItemPromises);
       
-      // Update menu item stock quantities
-      const stockUpdatePromises = cart.map(item => 
-        apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
-          stockQuantity: -item.quantity // Negative value indicates reduction
-        })
-      );
-      
-      // Wait for stock updates to complete
-      await Promise.all(stockUpdatePromises);
+      // Update menu item stock quantities - fetch current items first to get their stock
+      const stockUpdatePromises = await Promise.all(cart.map(async item => {
+        // First get the current menu item to check its current stock
+        const menuItemResponse = await apiRequest("GET", `/api/menu-items/${item.menuItemId}`);
+        const menuItem = await menuItemResponse.json();
+        
+        // Calculate new stock level, ensuring it never goes below 0
+        const currentStock = menuItem.stockQuantity || 0;
+        const newStock = Math.max(0, currentStock - item.quantity);
+        
+        // Update with absolute stock value instead of relative
+        return apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
+          stockQuantity: newStock
+        });
+      }));
       
       // Complete the order
       const completedOrderResponse = await apiRequest("PUT", `/api/orders/${orderData.id}`, {
