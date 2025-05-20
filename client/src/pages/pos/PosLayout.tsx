@@ -116,6 +116,13 @@ export default function PosLayout() {
     setCart(cart.filter(item => item.id !== id));
   };
   
+  // Modified to preserve table occupancy status
+  const handleOrderSuccess = () => {
+    setCart([]);
+    setActiveOrder(null);
+    // We intentionally don't clear selectedTable here to preserve table occupancy
+  };
+  
   const handleClearCart = () => {
     setCart([]);
     // Don't clear the selected table when clearing cart
@@ -231,7 +238,7 @@ export default function PosLayout() {
         cart={cart}
         selectedTable={selectedTable}
         total={cartTotal}
-        onSuccess={handleClearCart}
+        onSuccess={handleOrderSuccess}
         isTakeaway={isTakeaway}
       />
     </div>
