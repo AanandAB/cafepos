@@ -14,6 +14,7 @@ import MenuItemInventory from "@/pages/inventory/MenuItemInventory";
 import AddMenuItem from "@/pages/inventory/AddMenuItem";
 import Employees from "@/pages/employees/Employees";
 import Reports from "@/pages/reports/Reports";
+import PredictiveAnalytics from "@/pages/reports/PredictiveAnalytics";
 import Settings from "@/pages/settings/Settings";
 import Expenses from "@/pages/expenses/Expenses";
 import ShiftManagement from "@/pages/shifts/ShiftManagement";
@@ -88,6 +89,7 @@ function Router() {
         <Route path="/tables" component={() => <ProtectedRoute component={TableManagement} requiredRoles={['admin', 'manager', 'staff']} />} />
         <Route path="/shifts" component={() => <ProtectedRoute component={ShiftManagement} />} />
         <Route path="/reports" component={() => <ProtectedRoute component={Reports} requiredRoles={['admin', 'manager']} />} />
+        <Route path="/reports/predictive-analytics" component={() => <ProtectedRoute component={PredictiveAnalytics} requiredRoles={['admin', 'manager']} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} requiredRoles={['admin']} />} />
         <Route component={NotFound} />
       </Switch>
