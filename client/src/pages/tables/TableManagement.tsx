@@ -49,7 +49,7 @@ export default function TableManagement() {
   // Toggle table occupation status
   const handleToggleStatus = async (tableId: number, currentStatus: boolean) => {
     try {
-      await fetch(`/api/tables/${tableId}`, {
+      const response = await fetch(`/api/tables/${tableId}`, {
         method: "PATCH",
         headers: {
           'Content-Type': 'application/json'
@@ -59,14 +59,19 @@ export default function TableManagement() {
         })
       });
       
-      // Invalidate cache to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
+      if (!response.ok) {
+        throw new Error('Failed to update table status');
+      }
+      
+      // Force refetch the data instead of just invalidating
+      await queryClient.fetchQuery({ queryKey: ['/api/tables'] });
       
       toast({
         title: "Table status updated",
         description: `Table marked as ${!currentStatus ? 'occupied' : 'available'}.`,
       });
     } catch (error) {
+      console.error("Error updating table status:", error);
       toast({
         variant: "destructive",
         title: "Failed to update table status",
