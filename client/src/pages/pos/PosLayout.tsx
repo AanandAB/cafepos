@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -123,6 +124,26 @@ export default function PosLayout() {
   
   const handleTableSelect = (tableId: number) => {
     setSelectedTable(tableId);
+    
+    // Check if table is already occupied
+    if (tables) {
+      const tableArray = Array.isArray(tables) ? tables : [];
+      const selectedTableObj = tableArray.find((table: any) => table.id === tableId);
+      
+      if (selectedTableObj && !selectedTableObj.occupied) {
+        // Mark table as occupied when selecting an available table
+        fetch(`/api/tables/${tableId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ occupied: true })
+        }).then(() => {
+          // Invalidate tables query to refresh the data
+          queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
+        });
+      }
+    }
   };
   
   const handlePayment = () => {
