@@ -187,6 +187,30 @@ export class DatabaseStorage implements IStorage {
   async getInventoryItems(): Promise<InventoryItem[]> {
     return db.select().from(inventoryItems);
   }
+  
+  async searchInventoryItems(query: string): Promise<InventoryItem[]> {
+    // Use database LIKE operator to search inventory item names
+    return db.select()
+      .from(inventoryItems)
+      .where(
+        or(
+          like(inventoryItems.name, `%${query}%`),
+          like(inventoryItems.unit, `%${query}%`)
+        )
+      );
+  }
+  
+  async getLowStockItems(): Promise<InventoryItem[]> {
+    // Get items where quantity is below alert threshold
+    return db.select()
+      .from(inventoryItems)
+      .where(
+        and(
+          lte(inventoryItems.quantity, inventoryItems.alertThreshold),
+          isNull(inventoryItems.alertThreshold).not()
+        )
+      );
+  }
 
   async createInventoryItem(insertItem: InsertInventoryItem): Promise<InventoryItem> {
     const [item] = await db.insert(inventoryItems).values(insertItem).returning();
@@ -361,8 +385,8 @@ export class DatabaseStorage implements IStorage {
     const [item] = await db.insert(orderItems).values(insertItem).returning();
     
     // Update the order's total amount
-    const orderItems = await this.getOrderItemsByOrder(insertItem.orderId);
-    const totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    const items = await this.getOrderItemsByOrder(insertItem.orderId);
+    const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
     
     // Update the order with the new total
     await db.update(orders)
@@ -384,8 +408,8 @@ export class DatabaseStorage implements IStorage {
     // If price or quantity changed, update the order total
     if (data.totalPrice !== undefined || data.orderId !== undefined) {
       const orderId = data.orderId || item.orderId;
-      const orderItems = await this.getOrderItemsByOrder(orderId);
-      const totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      const items = await this.getOrderItemsByOrder(orderId);
+      const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
       
       await db.update(orders)
         .set({ totalAmount })
@@ -403,8 +427,8 @@ export class DatabaseStorage implements IStorage {
       await db.delete(orderItems).where(eq(orderItems.id, id));
       
       // Update the order's total amount
-      const orderItems = await this.getOrderItemsByOrder(item.orderId);
-      const totalAmount = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      const items = await this.getOrderItemsByOrder(item.orderId);
+      const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
       
       await db.update(orders)
         .set({ totalAmount })

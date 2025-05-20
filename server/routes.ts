@@ -11,7 +11,8 @@ import {
   insertOrderSchema,
   insertOrderItemSchema,
   insertEmployeeShiftSchema,
-  insertSettingSchema
+  insertSettingSchema,
+  insertExpenseSchema
 } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
