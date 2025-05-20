@@ -669,6 +669,53 @@ import { db } from "./db";
 import { eq, and, like, gte, lte, desc, asc, isNull, not } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  // Expense methods
+  async getExpense(id: number): Promise<Expense | undefined> {
+    const [expense] = await db.select().from(expenses).where(eq(expenses.id, id));
+    return expense;
+  }
+
+  async getExpenses(): Promise<Expense[]> {
+    return db.select().from(expenses).orderBy(desc(expenses.date));
+  }
+
+  async getExpensesByDateRange(startDate: Date, endDate: Date): Promise<Expense[]> {
+    return db.select()
+      .from(expenses)
+      .where(
+        and(
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate)
+        )
+      )
+      .orderBy(desc(expenses.date));
+  }
+
+  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+    const [expense] = await db
+      .insert(expenses)
+      .values(insertExpense)
+      .returning();
+    return expense;
+  }
+
+  async updateExpense(id: number, data: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const [updatedExpense] = await db
+      .update(expenses)
+      .set(data)
+      .where(eq(expenses.id, id))
+      .returning();
+    return updatedExpense;
+  }
+
+  async deleteExpense(id: number): Promise<boolean> {
+    const result = await db
+      .delete(expenses)
+      .where(eq(expenses.id, id))
+      .returning({ id: expenses.id });
+    return result.length > 0;
+  }
+  
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
