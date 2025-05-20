@@ -1,12 +1,20 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, subDays } from "date-fns";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  BarChart4,
+  Calendar,
+  CreditCard,
+  Download,
+  Edit,
+  FilePlus,
+  Filter,
+  Trash,
+} from 'lucide-react';
+import { Expense, InsertExpense, expenseCategoryEnum } from '@shared/schema';
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,24 +22,15 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -40,232 +39,283 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/dialog';
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { DateRange } from "react-day-picker";
-import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import { useToast } from '@/hooks/use-toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
-// Define category options
-const categoryOptions = [
-  { value: "inventory", label: "Inventory" },
-  { value: "salary", label: "Salary" },
-  { value: "rent", label: "Rent" },
-  { value: "utilities", label: "Utilities" },
-  { value: "equipment", label: "Equipment" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "marketing", label: "Marketing" },
-  { value: "other", label: "Other" },
-];
-
-// Create a form schema extended from the insert schema
+// Form schema for adding/editing expenses
 const expenseFormSchema = z.object({
-  description: z.string().min(2, {
-    message: "Description must be at least 2 characters.",
-  }),
-  amount: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive({
-      message: "Amount must be a positive number.",
-    })
-  ),
-  category: z.enum(["inventory", "salary", "rent", "utilities", "equipment", "maintenance", "marketing", "other"]),
+  description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
+  amount: z.number().positive({ message: 'Amount must be a positive number.' }),
+  category: z.enum(['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other']),
   notes: z.string().optional(),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 
 export default function Expenses() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<any>(null);
   const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30),
-    to: new Date(),
+    from: new Date(new Date().setDate(1)), // First day of current month
+    to: new Date()
   });
-
-  // Create form
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseFormSchema),
-    defaultValues: {
-      description: "",
-      amount: 0,
-      category: "other",
-      notes: "",
-    },
-  });
-
-  // Query expenses
-  const { data: expenses, isLoading } = useQuery({
-    queryKey: ["/api/expenses", date],
+  
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  
+  const { toast } = useToast();
+  
+  // Fetch expenses data
+  const { data: expenses = [], isLoading, error } = useQuery({
+    queryKey: ['/api/expenses', date?.from?.toISOString(), date?.to?.toISOString()],
     queryFn: async () => {
-      let url = "/api/expenses";
-      if (date?.from && date?.to) {
-        const startDate = format(date.from, "yyyy-MM-dd");
-        const endDate = format(date.to, "yyyy-MM-dd");
-        url += `?startDate=${startDate}&endDate=${endDate}`;
-      }
-      return apiRequest(url);
+      const params = new URLSearchParams();
+      if (date?.from) params.append('startDate', date.from.toISOString());
+      if (date?.to) params.append('endDate', date.to.toISOString());
+      
+      const response = await fetch(`/api/expenses?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch expenses');
+      return response.json();
     },
-    enabled: !!date,
+    enabled: !!date?.from && !!date?.to
   });
-
-  // Create expense mutation
-  const createExpenseMutation = useMutation({
-    mutationFn: (data: ExpenseFormValues) => {
-      return apiRequest("/api/expenses", {
-        method: "POST",
-        data,
+  
+  // Add expense mutation
+  const addExpenseMutation = useMutation({
+    mutationFn: async (values: ExpenseFormValues) => {
+      return apiRequest('/api/expenses', {
+        method: 'POST',
+        data: values
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales"] });
       toast({
         title: "Expense added",
-        description: "Your expense has been added successfully.",
+        description: "The expense has been added successfully.",
       });
-      setIsDialogOpen(false);
-      form.reset();
+      setIsAddDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add expense. Please try again.",
+        description: `Failed to add expense: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
-    },
+    }
   });
-
-  // Update expense mutation
-  const updateExpenseMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: ExpenseFormValues }) => {
+  
+  // Edit expense mutation
+  const editExpenseMutation = useMutation({
+    mutationFn: async (values: ExpenseFormValues & { id: number }) => {
+      const { id, ...data } = values;
       return apiRequest(`/api/expenses/${id}`, {
-        method: "PUT",
-        data,
+        method: 'PUT',
+        data
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales"] });
       toast({
         title: "Expense updated",
-        description: "Your expense has been updated successfully.",
+        description: "The expense has been updated successfully.",
       });
-      setIsDialogOpen(false);
-      setEditingExpense(null);
-      form.reset();
+      setIsEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update expense. Please try again.",
+        description: `Failed to update expense: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
-    },
+    }
   });
-
+  
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: async (id: number) => {
       return apiRequest(`/api/expenses/${id}`, {
-        method: "DELETE",
+        method: 'DELETE'
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales"] });
       toast({
         title: "Expense deleted",
-        description: "Your expense has been deleted successfully.",
+        description: "The expense has been deleted successfully.",
       });
+      setIsDeleteDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete expense. Please try again.",
+        description: `Failed to delete expense: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
+    }
+  });
+  
+  // Form for adding expenses
+  const addForm = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseFormSchema),
+    defaultValues: {
+      description: '',
+      amount: 0,
+      category: 'other',
+      notes: '',
     },
   });
-
-  // Handle form submission
-  function onSubmit(data: ExpenseFormValues) {
-    if (editingExpense) {
-      updateExpenseMutation.mutate({ id: editingExpense.id, data });
-    } else {
-      createExpenseMutation.mutate(data);
+  
+  // Form for editing expenses
+  const editForm = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseFormSchema),
+    defaultValues: {
+      description: selectedExpense?.description || '',
+      amount: selectedExpense?.amount || 0,
+      category: selectedExpense?.category || 'other',
+      notes: selectedExpense?.notes || '',
+    },
+  });
+  
+  // Reset the add form when dialog is opened
+  React.useEffect(() => {
+    if (isAddDialogOpen) {
+      addForm.reset({
+        description: '',
+        amount: 0,
+        category: 'other',
+        notes: '',
+      });
     }
-  }
-
-  // Open edit dialog
-  function handleEditExpense(expense: any) {
-    setEditingExpense(expense);
-    form.setValue("description", expense.description);
-    form.setValue("amount", expense.amount);
-    form.setValue("category", expense.category);
-    form.setValue("notes", expense.notes || "");
-    setIsDialogOpen(true);
-  }
-
+  }, [isAddDialogOpen, addForm]);
+  
+  // Set the edit form values when selectedExpense changes
+  React.useEffect(() => {
+    if (selectedExpense) {
+      editForm.reset({
+        description: selectedExpense.description,
+        amount: selectedExpense.amount,
+        category: selectedExpense.category,
+        notes: selectedExpense.notes || '',
+      });
+    }
+  }, [selectedExpense, editForm]);
+  
+  // Handle add form submission
+  const onAddSubmit = (values: ExpenseFormValues) => {
+    addExpenseMutation.mutate(values);
+  };
+  
+  // Handle edit form submission
+  const onEditSubmit = (values: ExpenseFormValues) => {
+    if (selectedExpense) {
+      editExpenseMutation.mutate({ ...values, id: selectedExpense.id });
+    }
+  };
+  
   // Calculate total expenses
-  const totalExpenses = expenses?.reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0;
-
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
   // Group expenses by category
   const expensesByCategory: Record<string, number> = {};
-  expenses?.forEach((expense: any) => {
-    const category = expense.category || "other";
+  expenses.forEach(expense => {
+    const category = expense.category;
     expensesByCategory[category] = (expensesByCategory[category] || 0) + expense.amount;
   });
-
+  
+  // Category color mapping
+  const categoryColors: Record<string, string> = {
+    inventory: 'bg-blue-500',
+    salary: 'bg-green-500',
+    rent: 'bg-purple-500',
+    utilities: 'bg-yellow-500',
+    equipment: 'bg-pink-500',
+    maintenance: 'bg-indigo-500',
+    marketing: 'bg-orange-500',
+    other: 'bg-gray-500',
+  };
+  
+  // Category label mapping
+  const categoryLabels: Record<string, string> = {
+    inventory: 'Inventory',
+    salary: 'Salary',
+    rent: 'Rent',
+    utilities: 'Utilities',
+    equipment: 'Equipment',
+    maintenance: 'Maintenance',
+    marketing: 'Marketing',
+    other: 'Other',
+  };
+  
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Expense Tracking</h1>
-        <div className="flex gap-2">
+    <div className="space-y-4 p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Expense Tracking</h1>
+          <p className="text-muted-foreground">
+            Manage and track all business expenses
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-2">
           <DatePickerWithRange
             date={date}
-            setDate={setDate as any}
+            setDate={setDate}
+            className="w-[300px]"
           />
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                onClick={() => {
-                  setEditingExpense(null);
-                  form.reset({
-                    description: "",
-                    amount: 0,
-                    category: "other",
-                    notes: "",
-                  });
-                }}
-              >
-                <PlusIcon className="mr-2 h-4 w-4" /> Add Expense
+              <Button>
+                <FilePlus className="mr-2 h-4 w-4" />
+                Add Expense
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>{editingExpense ? "Edit Expense" : "Add New Expense"}</DialogTitle>
+                <DialogTitle>Add New Expense</DialogTitle>
                 <DialogDescription>
-                  {editingExpense ? "Update expense details" : "Enter the details for your new expense"}
+                  Enter the details of the new expense.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              
+              <Form {...addForm}>
+                <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
                   <FormField
-                    control={form.control}
+                    control={addForm.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
@@ -277,35 +327,35 @@ export default function Expenses() {
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
-                    control={form.control}
+                    control={addForm.control}
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Amount (₹)</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value)}
+                          <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
-                    control={form.control}
+                    control={addForm.control}
                     name="category"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
+                        <Select 
+                          onValueChange={field.onChange} 
                           defaultValue={field.value}
-                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -313,40 +363,45 @@ export default function Expenses() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {categoryOptions.map((category) => (
-                              <SelectItem key={category.value} value={category.value}>
-                                {category.label}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="inventory">Inventory</SelectItem>
+                            <SelectItem value="salary">Salary</SelectItem>
+                            <SelectItem value="rent">Rent</SelectItem>
+                            <SelectItem value="utilities">Utilities</SelectItem>
+                            <SelectItem value="equipment">Equipment</SelectItem>
+                            <SelectItem value="maintenance">Maintenance</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
-                    control={form.control}
+                    control={addForm.control}
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Notes (Optional)</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Add any additional details"
+                          <Textarea 
+                            placeholder="Add any additional notes here" 
                             className="resize-none"
-                            {...field}
+                            {...field} 
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <DialogFooter>
-                    <Button type="submit" disabled={createExpenseMutation.isPending || updateExpenseMutation.isPending}>
-                      {(createExpenseMutation.isPending || updateExpenseMutation.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      {editingExpense ? "Update" : "Add"} Expense
+                    <Button 
+                      type="submit" 
+                      disabled={addExpenseMutation.isPending}
+                    >
+                      {addExpenseMutation.isPending ? 'Saving...' : 'Save Expense'}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -355,121 +410,295 @@ export default function Expenses() {
           </Dialog>
         </div>
       </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Expenses</CardTitle>
-            <CardDescription>All expenses in selected period</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">₹{totalExpenses.toFixed(2)}</p>
+            <div className="text-2xl font-bold">₹{totalExpenses.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              For period {date?.from && format(date.from, 'dd MMM yyyy')} - {date?.to && format(date.to, 'dd MMM yyyy')}
+            </p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Expense Count</CardTitle>
-            <CardDescription>Number of expenses recorded</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expense Count</CardTitle>
+            <BarChart4 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{expenses?.length || 0}</p>
+            <div className="text-2xl font-bold">{expenses.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Number of expenses recorded
+            </p>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Top Category</CardTitle>
-            <CardDescription>Highest spending category</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">By Category</CardTitle>
+            <Filter className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {Object.entries(expensesByCategory).length > 0 ? (
-              <p className="text-3xl font-bold">
-                {Object.entries(expensesByCategory)
-                  .sort((a, b) => b[1] - a[1])[0][0]
-                  .charAt(0)
-                  .toUpperCase() +
-                  Object.entries(expensesByCategory)
-                    .sort((a, b) => b[1] - a[1])[0][0]
-                    .slice(1)}
-              </p>
-            ) : (
-              <p className="text-3xl font-bold">-</p>
-            )}
+            <div className="space-y-2">
+              {Object.entries(expensesByCategory).length > 0 ? (
+                Object.entries(expensesByCategory).map(([category, amount]) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full mr-2 ${categoryColors[category]}`} />
+                      <span className="text-sm">{categoryLabels[category]}</span>
+                    </div>
+                    <span className="text-sm font-medium">₹{amount.toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">No expenses</div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Expenses Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense List</CardTitle>
-          <CardDescription>
-            Manage your expenses for the selected period
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <Table>
-              <TableCaption>
-                {expenses?.length
-                  ? `A list of your expenses from ${date?.from ? format(date.from, "PPP") : ""} to ${
-                      date?.to ? format(date.to, "PPP") : ""
-                    }`
-                  : "No expenses found for the selected period"}
-              </TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">Description</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4">Loading expenses...</TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4 text-red-500">
+                  <AlertCircle className="mr-2 h-4 w-4 inline" />
+                  Error loading expenses
+                </TableCell>
+              </TableRow>
+            ) : expenses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4">No expenses found for the selected period</TableCell>
+              </TableRow>
+            ) : (
+              expenses.map((expense) => (
+                <TableRow key={expense.id}>
+                  <TableCell className="font-medium">{expense.description}</TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={`${categoryColors[expense.category]} text-white border-0`}
+                    >
+                      {categoryLabels[expense.category]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
+                  <TableCell>{format(new Date(expense.date), 'dd MMM yyyy')}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {expense.notes || '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setSelectedExpense(expense);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit Expense</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setSelectedExpense(expense);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete Expense</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses?.map((expense: any) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{format(new Date(expense.date), "PPP")}</TableCell>
-                    <TableCell>{expense.description}</TableCell>
-                    <TableCell>
-                      {expense.category.charAt(0).toUpperCase() + expense.category.slice(1)}
-                    </TableCell>
-                    <TableCell className="text-right">₹{expense.amount.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditExpense(expense)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm("Are you sure you want to delete this expense?")) {
-                              deleteExpenseMutation.mutate(expense.id);
-                            }
-                          }}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Edit Expense Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogDescription>
+              Make changes to the expense details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter expense description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount (₹)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00" 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="inventory">Inventory</SelectItem>
+                        <SelectItem value="salary">Salary</SelectItem>
+                        <SelectItem value="rent">Rent</SelectItem>
+                        <SelectItem value="utilities">Utilities</SelectItem>
+                        <SelectItem value="equipment">Equipment</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Add any additional notes here" 
+                        className="resize-none"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={editExpenseMutation.isPending}
+                >
+                  {editExpenseMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this expense? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedExpense && (
+            <div className="space-y-4">
+              <div className="border rounded-md p-4">
+                <p><strong>Description:</strong> {selectedExpense.description}</p>
+                <p><strong>Amount:</strong> ₹{selectedExpense.amount.toFixed(2)}</p>
+                <p><strong>Category:</strong> {categoryLabels[selectedExpense.category]}</p>
+                <p><strong>Date:</strong> {format(new Date(selectedExpense.date), 'dd MMM yyyy')}</p>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteExpenseMutation.mutate(selectedExpense.id)}
+                  disabled={deleteExpenseMutation.isPending}
+                >
+                  {deleteExpenseMutation.isPending ? 'Deleting...' : 'Delete Expense'}
+                </Button>
+              </DialogFooter>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

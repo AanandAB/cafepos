@@ -728,16 +728,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid date format" });
         }
         
-        // Get expenses in date range - implement in storage
-        // For now, we'll just return all expenses
-        const expenses = await storage.getExpenses();
+        // Get expenses in date range
+        const expenses = await storage.getExpensesByDateRange(start, end);
         
-        const expensesInRange = expenses.filter(expense => {
-          const expenseDate = new Date(expense.date);
-          return expenseDate >= start && expenseDate <= end;
-        });
-        
-        res.json(expensesInRange);
+        res.json(expenses);
       } else {
         // Get all expenses
         const expenses = await storage.getExpenses();
