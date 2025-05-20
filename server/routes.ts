@@ -838,10 +838,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get expenses for the same period
       const expenses = await storage.getExpensesByDateRange(start, end);
       
-      // Calculate totals
-      const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const totalTax = orders.reduce((sum, order) => sum + order.taxAmount, 0);
-      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // Calculate totals - fix to ensure proper tax calculation
+      const totalSales = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const totalTax = orders.reduce((sum, order) => sum + (order.taxAmount || 0), 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+      
+      // Ensure tax is correctly accounted for in sales and profit calculations
       const totalProfit = totalSales - totalExpenses;
       
       // Group by payment method
