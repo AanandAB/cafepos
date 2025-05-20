@@ -384,9 +384,23 @@ export default function Reports() {
                   <Line 
                     type="monotone" 
                     dataKey="sales" 
-                    name="Sales" 
+                    name="Revenue" 
                     stroke="hsl(var(--primary))" 
                     activeDot={{ r: 8 }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="profit" 
+                    name="Profit" 
+                    stroke="green" 
+                    activeDot={{ r: 6 }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="expenses" 
+                    name="Expenses" 
+                    stroke="red" 
+                    strokeDasharray="3 3"
                   />
                 </LineChart>
               </ResponsiveContainer>

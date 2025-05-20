@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import PosLayout from "@/pages/pos/PosLayout";
 import Inventory from "@/pages/inventory/Inventory";
+import MenuItemInventory from "@/pages/inventory/MenuItemInventory";
 import Employees from "@/pages/employees/Employees";
 import Reports from "@/pages/reports/Reports";
 import Settings from "@/pages/settings/Settings";

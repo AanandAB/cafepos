@@ -117,12 +117,18 @@ export default function Expenses() {
   // Add expense mutation
   const addExpenseMutation = useMutation({
     mutationFn: async (values: ExpenseFormValues) => {
+      // Process the values before sending to the server
+      const processedValues = {
+        ...values,
+        amount: Number(values.amount) // Ensure amount is a number
+      };
+      
       const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify(processedValues)
       });
       if (!response.ok) {
         const error = await response.json();

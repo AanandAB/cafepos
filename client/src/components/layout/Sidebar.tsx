@@ -71,6 +71,12 @@ export default function Sidebar() {
       roles: ["admin", "manager"]
     },
     {
+      href: "/inventory/menu-items",
+      label: "Menu Stock",
+      icon: <Coffee className="h-5 w-5" />,
+      roles: ["admin", "manager"]
+    },
+    {
       href: "/employees",
       label: "Employees",
       icon: <Users className="h-5 w-5" />,
