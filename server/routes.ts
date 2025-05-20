@@ -589,11 +589,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
-      // Important: If order is completed and associated with a table, we need to handle table status
-      if (updatedOrder.status === 'completed' && updatedOrder.tableId && !preserveTableStatus) {
-        // Only mark the table as unoccupied if we're not explicitly preserving its status
-        await storage.updateTable(updatedOrder.tableId, { occupied: false });
-      }
+      // Important: With the new system, we ALWAYS preserve table status when completing orders
+      // Tables should only be marked unoccupied through explicit table management
+      // This ensures tables stay occupied even after orders are completed
+      // The table is freed up only when manually marked as available in the tables screen
       
       res.json(updatedOrder);
     } catch (error) {

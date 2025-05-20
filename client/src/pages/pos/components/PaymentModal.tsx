@@ -155,27 +155,43 @@ export default function PaymentModal({
       
       await Promise.all(orderItemPromises);
       
-      // Update menu item stock quantities - fetch current items first to get their stock
-      const stockUpdatePromises = await Promise.all(cart.map(async item => {
+      // Update menu item stock quantities in a more direct way to ensure they're applied
+      for (const item of cart) {
         try {
           // First get the current menu item to check its current stock
-          const menuItemResponse = await apiRequest("GET", `/api/menu-items/${item.menuItemId}`);
+          const menuItemResponse = await fetch(`/api/menu-items/${item.menuItemId}`);
+          if (!menuItemResponse.ok) {
+            console.error(`Failed to fetch menu item ${item.menuItemId}`);
+            continue;
+          }
+          
           const menuItem = await menuItemResponse.json();
           
           // Calculate new stock level, ensuring it never goes below 0
           const currentStock = menuItem.stockQuantity || 0;
           const newStock = Math.max(0, currentStock - item.quantity);
           
-          // Update with absolute stock value instead of relative
-          return apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
-            stockQuantity: newStock
+          console.log(`Updating stock for ${menuItem.name}: ${currentStock} -> ${newStock}`);
+          
+          // Use direct fetch instead of apiRequest for more reliable update
+          const updateResponse = await fetch(`/api/menu-items/${item.menuItemId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              stockQuantity: newStock
+            })
           });
+          
+          if (!updateResponse.ok) {
+            console.error(`Failed to update stock for menu item ${item.menuItemId}`);
+          }
         } catch (error) {
           console.error(`Error updating stock for menu item ${item.menuItemId}:`, error);
           // Continue with other updates even if one fails
-          return null;
         }
-      }));
+      }
       
       // Complete the order but do not change table occupancy status
       const completedOrderResponse = await apiRequest("PUT", `/api/orders/${orderData.id}`, {
