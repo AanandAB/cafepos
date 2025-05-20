@@ -186,6 +186,10 @@ export default function MenuItemInventory() {
             Manage stock levels for menu items by category
           </p>
         </div>
+        <Button onClick={() => window.location.href = '/inventory/add-menu-item'}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Menu Item
+        </Button>
       </div>
 
       {/* Filters and Search */}

@@ -81,6 +81,7 @@ function Router() {
         <Route path="/pos" component={() => <ProtectedRoute component={PosLayout} />} />
         <Route path="/inventory" component={() => <ProtectedRoute component={Inventory} requiredRoles={['admin', 'manager']} />} />
         <Route path="/inventory/menu-items" component={() => <ProtectedRoute component={MenuItemInventory} requiredRoles={['admin', 'manager']} />} />
+        <Route path="/inventory/add-menu-item" component={() => <ProtectedRoute component={AddMenuItem} requiredRoles={['admin', 'manager']} />} />
         <Route path="/employees" component={() => <ProtectedRoute component={Employees} requiredRoles={['admin', 'manager']} />} />
         <Route path="/expenses" component={() => <ProtectedRoute component={Expenses} requiredRoles={['admin', 'manager']} />} />
         <Route path="/tables" component={() => <ProtectedRoute component={TableManagement} requiredRoles={['admin', 'manager', 'staff']} />} />

@@ -38,19 +38,19 @@ export default function TableSelection({ selectedTable, onSelectTable }: TableSe
           <Card 
             key={table.id} 
             className={`table-item cursor-pointer transition-all duration-200 ${
-              table.occupied ? 'occupied' : 'available'
+              table.occupied ? 'bg-blue-100 dark:bg-blue-900' : 'bg-green-100 dark:bg-green-900'
             } ${selectedTable === table.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => !table.occupied && onSelectTable(table.id)}
+            onClick={() => onSelectTable(table.id)}
           >
             <CardContent className="p-4 text-center flex flex-col items-center justify-center h-32">
               {table.occupied ? (
-                <BeerOff className="h-8 w-8 mb-2 text-red-500" />
+                <Coffee className="h-8 w-8 mb-2 text-blue-500" />
               ) : (
                 <Coffee className="h-8 w-8 mb-2 text-green-500" />
               )}
               <h3 className="font-semibold text-lg">{table.name}</h3>
               <p className="text-sm">
-                {table.occupied ? 'Occupied' : 'Available'}
+                {table.occupied ? 'Occupied - Click to add items' : 'Available'}
               </p>
               {table.capacity && (
                 <p className="text-xs text-muted-foreground mt-1">
