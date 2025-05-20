@@ -118,6 +118,7 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.employeeShifts = new Map();
+    this.expenses = new Map();
     this.settings = new Map();
     
     // Initialize some default data
