@@ -154,6 +154,8 @@ export default function Reports() {
       return {
         name: format(date, fmt),
         sales: 0,
+        expenses: 0, 
+        profit: 0,
         date: date
       };
     });
@@ -167,14 +169,14 @@ export default function Reports() {
         const hour = format(orderDate, 'HH:mm');
         const index = data.findIndex(d => d.name === hour);
         if (index !== -1) {
-          data[index].sales += order.totalAmount;
+          data[index].sales += order.totalAmount || 0;
         }
       } else if (reportType === "weekly") {
         // Find the day slot
         const day = format(orderDate, 'EEE');
         const index = data.findIndex(d => d.name === day);
         if (index !== -1) {
-          data[index].sales += order.totalAmount;
+          data[index].sales += order.totalAmount || 0;
         }
       } else {
         // Find the week slot that contains this date
@@ -183,9 +185,46 @@ export default function Reports() {
           orderDate <= endOfDay(d.date)
         );
         if (index !== -1) {
-          data[index].sales += order.totalAmount;
+          data[index].sales += order.totalAmount || 0;
         }
       }
+    });
+    
+    // Aggregate expense data
+    if (salesData.expenses && salesData.expenses.length > 0) {
+      salesData.expenses.forEach((expense: any) => {
+        const expenseDate = new Date(expense.date);
+        
+        if (reportType === "daily") {
+          // Find the hour slot
+          const hour = format(expenseDate, 'HH:mm');
+          const index = data.findIndex(d => d.name === hour);
+          if (index !== -1) {
+            data[index].expenses += expense.amount || 0;
+          }
+        } else if (reportType === "weekly") {
+          // Find the day slot
+          const day = format(expenseDate, 'EEE');
+          const index = data.findIndex(d => d.name === day);
+          if (index !== -1) {
+            data[index].expenses += expense.amount || 0;
+          }
+        } else {
+          // Find the week slot that contains this date
+          const index = data.findIndex(d => 
+            expenseDate >= startOfDay(d.date) && 
+            expenseDate <= endOfDay(d.date)
+          );
+          if (index !== -1) {
+            data[index].expenses += expense.amount || 0;
+          }
+        }
+      });
+    }
+    
+    // Calculate profit
+    data.forEach(item => {
+      item.profit = item.sales - item.expenses;
     });
     
     return data;
