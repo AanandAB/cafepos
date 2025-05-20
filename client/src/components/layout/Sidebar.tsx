@@ -11,7 +11,8 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight,
-  DollarSign 
+  DollarSign,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -68,6 +69,12 @@ export default function Sidebar() {
       label: "Employees",
       icon: <Users className="h-5 w-5" />,
       roles: ["admin", "manager"]
+    },
+    {
+      href: "/shifts",
+      label: "Shifts",
+      icon: <Clock className="h-5 w-5" />,
+      roles: ["admin", "manager", "staff", "cashier"]
     },
     {
       href: "/expenses",

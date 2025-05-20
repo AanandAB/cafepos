@@ -230,10 +230,27 @@ export default function Reports() {
         <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
         
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <DateRangePicker
-            date={dateRange}
-            onDateChange={setDateRange}
-          />
+          <div className="w-full sm:w-auto">
+            <DatePickerWithRange
+              date={{
+                from: dateRange.from,
+                to: dateRange.to
+              }}
+              setDate={(newDateRange) => {
+                if (newDateRange?.from && newDateRange?.to) {
+                  setDateRange({
+                    from: newDateRange.from,
+                    to: newDateRange.to
+                  });
+                } else if (newDateRange?.from) {
+                  setDateRange({
+                    from: newDateRange.from,
+                    to: dateRange.to
+                  });
+                }
+              }}
+            />
+          </div>
           
           <div className="flex gap-2">
             <Button variant="outline" size="icon" onClick={handlePrint}>

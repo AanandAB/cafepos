@@ -80,6 +80,7 @@ function Router() {
         <Route path="/inventory" component={() => <ProtectedRoute component={Inventory} requiredRoles={['admin', 'manager']} />} />
         <Route path="/employees" component={() => <ProtectedRoute component={Employees} requiredRoles={['admin', 'manager']} />} />
         <Route path="/expenses" component={() => <ProtectedRoute component={Expenses} requiredRoles={['admin', 'manager']} />} />
+        <Route path="/shifts" component={() => <ProtectedRoute component={ShiftManagement} />} />
         <Route path="/reports" component={() => <ProtectedRoute component={Reports} requiredRoles={['admin', 'manager']} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} requiredRoles={['admin']} />} />
         <Route component={NotFound} />
