@@ -132,7 +132,14 @@ export default function PaymentModal({
         ...upiData
       });
       
-      const orderData = await orderResponse.json();
+      // Safely parse the JSON response with error handling
+      let orderData;
+      try {
+        orderData = await orderResponse.json();
+      } catch (error) {
+        console.error("Error parsing order response:", error);
+        throw new Error("Failed to process order. Please try again.");
+      }
       
       // Then create order items
       const orderItemPromises = cart.map(item => 
@@ -150,18 +157,24 @@ export default function PaymentModal({
       
       // Update menu item stock quantities - fetch current items first to get their stock
       const stockUpdatePromises = await Promise.all(cart.map(async item => {
-        // First get the current menu item to check its current stock
-        const menuItemResponse = await apiRequest("GET", `/api/menu-items/${item.menuItemId}`);
-        const menuItem = await menuItemResponse.json();
-        
-        // Calculate new stock level, ensuring it never goes below 0
-        const currentStock = menuItem.stockQuantity || 0;
-        const newStock = Math.max(0, currentStock - item.quantity);
-        
-        // Update with absolute stock value instead of relative
-        return apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
-          stockQuantity: newStock
-        });
+        try {
+          // First get the current menu item to check its current stock
+          const menuItemResponse = await apiRequest("GET", `/api/menu-items/${item.menuItemId}`);
+          const menuItem = await menuItemResponse.json();
+          
+          // Calculate new stock level, ensuring it never goes below 0
+          const currentStock = menuItem.stockQuantity || 0;
+          const newStock = Math.max(0, currentStock - item.quantity);
+          
+          // Update with absolute stock value instead of relative
+          return apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
+            stockQuantity: newStock
+          });
+        } catch (error) {
+          console.error(`Error updating stock for menu item ${item.menuItemId}:`, error);
+          // Continue with other updates even if one fails
+          return null;
+        }
       }));
       
       // Complete the order
@@ -169,7 +182,16 @@ export default function PaymentModal({
         status: "completed"
       });
       
-      const completedOrder = await completedOrderResponse.json();
+      // Safely parse the order completion response
+      let completedOrder;
+      try {
+        completedOrder = await completedOrderResponse.json();
+      } catch (error) {
+        console.error("Error parsing completed order response:", error);
+        // Since we've already created the order and items, we'll consider this successful
+        // even if we can't parse the response
+        completedOrder = { id: orderData.id, status: "completed" };
+      }
       
       // Generate and print receipt if needed
       if (printReceipt) {
