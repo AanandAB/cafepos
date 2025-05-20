@@ -177,9 +177,11 @@ export default function PaymentModal({
         }
       }));
       
-      // Complete the order
+      // Complete the order but do not change table occupancy status
       const completedOrderResponse = await apiRequest("PUT", `/api/orders/${orderData.id}`, {
-        status: "completed"
+        status: "completed",
+        // Include preserveTableStatus flag to prevent unoccupying the table
+        preserveTableStatus: true
       });
       
       // Safely parse the order completion response

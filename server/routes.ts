@@ -564,7 +564,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/orders/:id', isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const result = insertOrderSchema.partial().safeParse(req.body);
+      // Extract preserveTableStatus flag before validation
+      const preserveTableStatus = req.body.preserveTableStatus === true;
+      
+      // Remove non-schema property before validation
+      const requestData = { ...req.body };
+      delete requestData.preserveTableStatus;
+      
+      const result = insertOrderSchema.partial().safeParse(requestData);
       
       if (!result.success) {
         return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
@@ -582,8 +589,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
-      // Important: Don't mark tables as unoccupied when completing orders
-      // We only want to mark tables as unoccupied when explicitly requested
+      // Important: If order is completed and associated with a table, we need to handle table status
+      if (updatedOrder.status === 'completed' && updatedOrder.tableId && !preserveTableStatus) {
+        // Only mark the table as unoccupied if we're not explicitly preserving its status
+        await storage.updateTable(updatedOrder.tableId, { occupied: false });
+      }
       
       res.json(updatedOrder);
     } catch (error) {
