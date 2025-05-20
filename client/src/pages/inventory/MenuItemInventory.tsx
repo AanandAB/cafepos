@@ -110,7 +110,7 @@ export default function MenuItemInventory() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          stockQuantity: values.quantity
+          stockQuantity: Number(values.quantity)
         })
       });
       

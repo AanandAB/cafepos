@@ -319,6 +319,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.patch('/api/menu-items/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Simple validation for stock update
+      if (req.body.stockQuantity !== undefined && typeof req.body.stockQuantity !== 'number') {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: "Stock quantity must be a number" 
+        });
+      }
+      
+      const menuItem = await storage.getMenuItem(id);
+      if (!menuItem) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      
+      const updatedMenuItem = await storage.updateMenuItem(id, req.body);
+      res.json(updatedMenuItem);
+    } catch (error) {
+      console.error("Error updating menu item stock:", error);
+      res.status(500).json({ message: "Failed to update stock" });
+    }
+  });
+  
   app.delete('/api/menu-items/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);

@@ -46,6 +46,7 @@ export const menuItems = pgTable("menu_items", {
   taxRate: doublePrecision("tax_rate").notNull().default(5), // Default GST rate of 5%
   available: boolean("available").notNull().default(true),
   imageUrl: text("image_url"),
+  stockQuantity: integer("stock_quantity").default(0), // Stock quantity for inventory tracking
 });
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
