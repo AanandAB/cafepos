@@ -267,7 +267,16 @@ export default function Reports() {
   return (
     <div className="space-y-6 print-content">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
-        <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Reports & Analytics</h1>
+          <div className="mt-2">
+            <a href="/reports/predictive-analytics" className="text-blue-500 hover:underline inline-flex items-center text-sm">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              AI-Powered Predictive Analytics
+              <span className="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2 py-0.5 rounded ml-2">NEW</span>
+            </a>
+          </div>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <div className="w-full sm:w-auto">
