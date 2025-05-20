@@ -838,16 +838,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getOrdersByDateRange(start, end);
       
       // Get expenses for the same period
-      const expenses = await storage.getExpenses();
-      const expensesInRange = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate >= start && expenseDate <= end;
-      });
+      const expenses = await storage.getExpensesByDateRange(start, end);
       
       // Calculate totals
       const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
       const totalTax = orders.reduce((sum, order) => sum + order.taxAmount, 0);
-      const totalExpenses = expensesInRange.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
       const totalProfit = totalSales - totalExpenses;
       
       // Group by payment method
@@ -860,7 +856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Group expenses by category
       const expenseCategoryTotals: Record<string, number> = {};
-      expensesInRange.forEach(expense => {
+      expenses.forEach(expense => {
         if (expense.category) {
           expenseCategoryTotals[expense.category] = (expenseCategoryTotals[expense.category] || 0) + expense.amount;
         }
@@ -877,7 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethodTotals,
         expenseCategoryTotals,
         orders,
-        expenses: expensesInRange
+        expenses
       });
     } catch (error) {
       next(error);

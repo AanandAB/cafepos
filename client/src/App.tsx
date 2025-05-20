@@ -13,6 +13,7 @@ import Inventory from "@/pages/inventory/Inventory";
 import Employees from "@/pages/employees/Employees";
 import Reports from "@/pages/reports/Reports";
 import Settings from "@/pages/settings/Settings";
+import Expenses from "@/pages/expenses/Expenses";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
@@ -77,6 +78,7 @@ function Router() {
         <Route path="/pos" component={() => <ProtectedRoute component={PosLayout} />} />
         <Route path="/inventory" component={() => <ProtectedRoute component={Inventory} requiredRoles={['admin', 'manager']} />} />
         <Route path="/employees" component={() => <ProtectedRoute component={Employees} requiredRoles={['admin', 'manager']} />} />
+        <Route path="/expenses" component={() => <ProtectedRoute component={Expenses} requiredRoles={['admin', 'manager']} />} />
         <Route path="/reports" component={() => <ProtectedRoute component={Reports} requiredRoles={['admin', 'manager']} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} requiredRoles={['admin']} />} />
         <Route component={NotFound} />

@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  DollarSign 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -66,6 +67,12 @@ export default function Sidebar() {
       href: "/employees",
       label: "Employees",
       icon: <Users className="h-5 w-5" />,
+      roles: ["admin", "manager"]
+    },
+    {
+      href: "/expenses",
+      label: "Expenses",
+      icon: <DollarSign className="h-5 w-5" />,
       roles: ["admin", "manager"]
     },
     {
