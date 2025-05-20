@@ -37,11 +37,14 @@ app.use((req, res, next) => {
 });
 
 import { initializeDatabase } from "./db-setup";
+import { updateMenuItemsTable } from "./update-db";
 
 (async () => {
   try {
     // Initialize the database with default data
     await initializeDatabase();
+    // Add stock tracking to menu items
+    await updateMenuItemsTable();
     log("Database initialized successfully", "express");
   } catch (error) {
     log(`Database initialization error: ${error}`, "express");
