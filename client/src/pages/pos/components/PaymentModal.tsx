@@ -148,6 +148,16 @@ export default function PaymentModal({
       
       await Promise.all(orderItemPromises);
       
+      // Update menu item stock quantities
+      const stockUpdatePromises = cart.map(item => 
+        apiRequest("PATCH", `/api/menu-items/${item.menuItemId}`, {
+          stockQuantity: -item.quantity // Negative value indicates reduction
+        })
+      );
+      
+      // Wait for stock updates to complete
+      await Promise.all(stockUpdatePromises);
+      
       // Complete the order
       const completedOrderResponse = await apiRequest("PUT", `/api/orders/${orderData.id}`, {
         status: "completed"

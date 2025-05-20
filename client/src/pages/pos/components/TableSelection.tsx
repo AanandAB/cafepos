@@ -10,9 +10,10 @@ type TableSelectionProps = {
 };
 
 export default function TableSelection({ selectedTable, onSelectTable }: TableSelectionProps) {
-  // Fetch tables
+  // Fetch tables with auto-refresh to show real-time status
   const { data: tables, isLoading } = useQuery({
-    queryKey: ['/api/tables']
+    queryKey: ['/api/tables'],
+    refetchInterval: 5000 // Refresh every 5 seconds to show updated table occupancy status
   });
   
   if (isLoading) {
@@ -27,10 +28,13 @@ export default function TableSelection({ selectedTable, onSelectTable }: TableSe
     );
   }
   
+  // Ensure tables is always an array
+  const tableArray = Array.isArray(tables) ? tables : [];
+  
   return (
     <div className="p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {tables?.map((table: any) => (
+        {tableArray.map((table: any) => (
           <Card 
             key={table.id} 
             className={`table-item cursor-pointer transition-all duration-200 ${

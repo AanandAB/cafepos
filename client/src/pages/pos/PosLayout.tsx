@@ -171,7 +171,7 @@ export default function PosLayout() {
             <TabsContent value="menu" className="flex-1 overflow-auto">
               <Card className="border-0 h-full">
                 <MenuItems 
-                  categories={categories || []} 
+                  categories={Array.isArray(categories) ? categories : []} 
                   isLoading={isCategoriesLoading} 
                   onAddToCart={handleAddToCart} 
                 />
