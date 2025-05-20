@@ -570,10 +570,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
       }
       
+      // Get the order first to check if it has a table
+      const existingOrder = await storage.getOrder(id);
+      if (!existingOrder) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Update the order with the provided data
       const updatedOrder = await storage.updateOrder(id, result.data);
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
       }
+      
+      // Important: Don't mark tables as unoccupied when completing orders
+      // We only want to mark tables as unoccupied when explicitly requested
       
       res.json(updatedOrder);
     } catch (error) {
@@ -864,12 +874,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get expenses for the same period
       const expenses = await storage.getExpensesByDateRange(start, end);
       
-      // Calculate totals - fix to ensure proper tax calculation
-      const totalSales = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-      const totalTax = orders.reduce((sum, order) => sum + (order.taxAmount || 0), 0);
+      // Calculate totals - fix to ensure proper calculation of all values
+      let totalSales = 0;
+      let totalTax = 0;
+
+      // Process each order and get its items to calculate actual sales
+      for (const order of orders) {
+        if (order.status === 'completed') {
+          // Get order items to calculate actual sales
+          const orderItems = await storage.getOrderItemsByOrder(order.id);
+          
+          // Calculate this order's total from actual items
+          const orderTotal = orderItems.reduce((sum, item) => 
+            sum + (item.quantity * item.unitPrice), 0);
+          
+          // Add to running totals
+          totalSales += orderTotal;
+          totalTax += (order.taxAmount || 0);
+        }
+      }
+      
       const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
       
-      // Ensure tax is correctly accounted for in sales and profit calculations
+      // Calculate profit (sales minus expenses)
       const totalProfit = totalSales - totalExpenses;
       
       // Group by payment method
