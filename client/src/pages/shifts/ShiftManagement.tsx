@@ -70,9 +70,17 @@ export default function ShiftManagement() {
   // Clock in mutation
   const clockInMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/shifts/clock-in', {
-        method: 'POST'
+      const response = await fetch('/api/shifts/clock-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clock in');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -94,9 +102,17 @@ export default function ShiftManagement() {
   // Clock out mutation
   const clockOutMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/clock-out/${shiftId}`, {
-        method: 'POST'
+      const response = await fetch(`/api/shifts/clock-out/${shiftId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clock out');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -119,9 +135,17 @@ export default function ShiftManagement() {
   // Clock out other user mutation (admin/manager only)
   const adminClockOutMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/admin-clock-out/${shiftId}`, {
-        method: 'POST'
+      const response = await fetch(`/api/shifts/admin-clock-out/${shiftId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to clock out employee');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({

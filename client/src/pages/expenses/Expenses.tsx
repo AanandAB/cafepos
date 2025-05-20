@@ -117,10 +117,18 @@ export default function Expenses() {
   // Add expense mutation
   const addExpenseMutation = useMutation({
     mutationFn: async (values: ExpenseFormValues) => {
-      return apiRequest('/api/expenses', {
+      const response = await fetch('/api/expenses', {
         method: 'POST',
-        data: values
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(values)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add expense');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -143,10 +151,18 @@ export default function Expenses() {
   const editExpenseMutation = useMutation({
     mutationFn: async (values: ExpenseFormValues & { id: number }) => {
       const { id, ...data } = values;
-      return apiRequest(`/api/expenses/${id}`, {
+      const response = await fetch(`/api/expenses/${id}`, {
         method: 'PUT',
-        data
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update expense');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -168,9 +184,17 @@ export default function Expenses() {
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/expenses/${id}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/expenses/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete expense');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
