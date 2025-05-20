@@ -36,7 +36,14 @@ export default function TableManagement() {
   
   // Fetch all tables
   const { data: tables, isLoading } = useQuery({
-    queryKey: ['/api/tables']
+    queryKey: ['/api/tables'],
+    queryFn: async () => {
+      const response = await fetch('/api/tables');
+      if (!response.ok) {
+        throw new Error('Failed to fetch tables');
+      }
+      return response.json();
+    }
   });
   
   // Toggle table occupation status

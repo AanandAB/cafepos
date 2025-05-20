@@ -15,6 +15,7 @@ import Reports from "@/pages/reports/Reports";
 import Settings from "@/pages/settings/Settings";
 import Expenses from "@/pages/expenses/Expenses";
 import ShiftManagement from "@/pages/shifts/ShiftManagement";
+import TableManagement from "@/pages/tables/TableManagement";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
@@ -80,6 +81,7 @@ function Router() {
         <Route path="/inventory" component={() => <ProtectedRoute component={Inventory} requiredRoles={['admin', 'manager']} />} />
         <Route path="/employees" component={() => <ProtectedRoute component={Employees} requiredRoles={['admin', 'manager']} />} />
         <Route path="/expenses" component={() => <ProtectedRoute component={Expenses} requiredRoles={['admin', 'manager']} />} />
+        <Route path="/tables" component={() => <ProtectedRoute component={TableManagement} requiredRoles={['admin', 'manager', 'staff']} />} />
         <Route path="/shifts" component={() => <ProtectedRoute component={ShiftManagement} />} />
         <Route path="/reports" component={() => <ProtectedRoute component={Reports} requiredRoles={['admin', 'manager']} />} />
         <Route path="/settings" component={() => <ProtectedRoute component={Settings} requiredRoles={['admin']} />} />
