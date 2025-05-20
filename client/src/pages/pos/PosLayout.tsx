@@ -33,11 +33,38 @@ export default function PosLayout() {
     queryKey: ['/api/categories']
   });
   
+  // Fetch tables to check availability
+  const { data: tables, isLoading: isTablesLoading } = useQuery({
+    queryKey: ['/api/tables'],
+    refetchInterval: 5000 // Refresh every 5 seconds to keep tables data updated
+  });
+  
   // Event handlers
   const handleAddToCart = (menuItem: any) => {
+    // Check if item is out of stock
+    if (menuItem.stockQuantity !== undefined && menuItem.stockQuantity <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Out of Stock",
+        description: `${menuItem.name} is currently unavailable`,
+      });
+      return;
+    }
+    
     const existingItemIndex = cart.findIndex(item => item.menuItemId === menuItem.id);
     
     if (existingItemIndex >= 0) {
+      // Check if adding more would exceed available stock
+      const currentQuantity = cart[existingItemIndex].quantity;
+      if (menuItem.stockQuantity !== undefined && currentQuantity + 1 > menuItem.stockQuantity) {
+        toast({
+          variant: "destructive",
+          title: "Limited Stock",
+          description: `Only ${menuItem.stockQuantity} of ${menuItem.name} available`,
+        });
+        return;
+      }
+      
       // Item exists, increase quantity
       const updatedCart = [...cart];
       updatedCart[existingItemIndex].quantity += 1;

@@ -21,12 +21,17 @@ export default function MenuItems({ categories, isLoading, onAddToCart }: MenuIt
   const { data: menuItems, isLoading: isMenuItemsLoading } = useQuery({
     queryKey: activeCategory 
       ? ['/api/menu-items/category', activeCategory]
-      : ['/api/menu-items']
+      : ['/api/menu-items'],
+    refetchInterval: 10000 // Refresh every 10 seconds to keep stock updated
   });
   
-  const filteredItems = menuItems ? menuItems.filter((item: any) => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) && item.available
-  ) : [];
+  // Ensure menuItems is always an array for filtering
+  const menuItemsArray = Array.isArray(menuItems) ? menuItems : [];
+  
+  const filteredItems = menuItemsArray.filter((item: any) => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    (item.available === undefined || item.available === true)
+  );
   
   return (
     <div className="h-full flex flex-col">
@@ -41,7 +46,7 @@ export default function MenuItems({ categories, isLoading, onAddToCart }: MenuIt
           />
         </div>
         
-        <ScrollArea className="whitespace-nowrap pb-2" orientation="horizontal">
+        <ScrollArea className="whitespace-nowrap pb-2">
           <div className="flex space-x-2">
             <Button
               variant={activeCategory === null ? "default" : "outline"}
@@ -91,13 +96,21 @@ export default function MenuItems({ categories, isLoading, onAddToCart }: MenuIt
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
                       <div className="mt-1 flex items-center justify-between">
-                        <span className="font-semibold">
-                          ₹{item.price.toFixed(2)}
-                        </span>
+                        <div>
+                          <span className="font-semibold mr-2">
+                            ₹{item.price.toFixed(2)}
+                          </span>
+                          {item.stockQuantity !== undefined && (
+                            <span className={`text-xs ${item.stockQuantity <= 5 ? 'text-red-500' : 'text-gray-500'}`}>
+                              Stock: {item.stockQuantity}
+                            </span>
+                          )}
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          disabled={item.stockQuantity !== undefined && item.stockQuantity <= 0}
                           onClick={() => onAddToCart(item)}
                         >
                           <Plus className="h-4 w-4" />
