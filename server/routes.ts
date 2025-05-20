@@ -745,21 +745,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/expenses', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
-      const result = insertExpenseSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
+      // Validate expense data
+      if (!req.body.description || !req.body.amount || !req.body.category) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: "Description, amount, and category are required" 
+        });
       }
       
       // Add the user ID from the authenticated user
       const user = req.user as any;
       const expenseData = {
-        ...result.data,
-        userId: user.id
+        ...req.body,
+        userId: user.id,
+        date: req.body.date || new Date()
       };
       
       const expense = await storage.createExpense(expenseData);
       res.status(201).json(expense);
     } catch (error) {
+      console.error("Error creating expense:", error);
       next(error);
     }
   });

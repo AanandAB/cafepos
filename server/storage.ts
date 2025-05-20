@@ -12,7 +12,7 @@ import {
   users, categories, menuItems, inventoryItems, tables, orders, orderItems, employeeShifts, expenses, settings
 } from "@shared/schema";
 import { db } from './db';
-import { eq, and, or, gte, lte, isNull, desc } from 'drizzle-orm';
+import { eq, and, or, gte, lte, isNull, desc, like, not } from 'drizzle-orm';
 
 export interface IStorage {
   // User methods
@@ -189,27 +189,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async searchInventoryItems(query: string): Promise<InventoryItem[]> {
-    // Use database LIKE operator to search inventory item names
-    return db.select()
-      .from(inventoryItems)
-      .where(
-        or(
-          like(inventoryItems.name, `%${query}%`),
-          like(inventoryItems.unit, `%${query}%`)
-        )
-      );
+    // Database LIKE implementation for search
+    const lowerQuery = query.toLowerCase();
+    const allItems = await db.select().from(inventoryItems);
+    return allItems.filter(item => 
+      item.name.toLowerCase().includes(lowerQuery) || 
+      item.unit.toLowerCase().includes(lowerQuery)
+    );
   }
   
   async getLowStockItems(): Promise<InventoryItem[]> {
     // Get items where quantity is below alert threshold
-    return db.select()
-      .from(inventoryItems)
-      .where(
-        and(
-          lte(inventoryItems.quantity, inventoryItems.alertThreshold),
-          isNull(inventoryItems.alertThreshold).not()
-        )
-      );
+    const allItems = await db.select().from(inventoryItems);
+    return allItems.filter(item => 
+      item.alertThreshold !== null && 
+      item.quantity <= item.alertThreshold
+    );
   }
 
   async createInventoryItem(insertItem: InsertInventoryItem): Promise<InventoryItem> {
