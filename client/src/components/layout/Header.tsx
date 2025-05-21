@@ -141,13 +141,13 @@ export default function Header() {
     }
   };
 
-  // Properly check for active shifts and handle type safety
-  const hasActiveShift = Array.isArray(activeShift) && activeShift.length > 0 && 
-    activeShift.some((shift: any) => !shift.clockOut);
+  // Check if the user has an active shift from the API response
+  // If activeShift is an object with clockIn but no clockOut, it's active
+  const hasActiveShift = activeShift && typeof activeShift === 'object' && 
+    'clockIn' in activeShift && !activeShift.clockOut;
     
   // Get the ID of the active shift for clock-out functionality
-  const activeShiftId = hasActiveShift && Array.isArray(activeShift) ? 
-    activeShift.find((shift: any) => !shift.clockOut)?.id : undefined;
+  const activeShiftId = hasActiveShift && activeShift ? activeShift.id : undefined;
 
   return (
     <header className="bg-background border-b h-16 px-4 flex items-center justify-between">

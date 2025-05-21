@@ -327,8 +327,13 @@ export default function ShiftManagement() {
                               setSelectedShift(shift);
                               setConfirmClockOutDialogOpen(true);
                             }}
-                            disabled={adminClockOutMutation.isPending}
+                            disabled={adminClockOutMutation.isPending || clockOutMutation.isPending}
                           >
+                            {clockOutMutation.isPending && shift.userId === user?.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <LogOut className="mr-2 h-4 w-4" />
+                            )}
                             Clock Out
                           </Button>
                         )}
