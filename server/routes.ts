@@ -448,8 +448,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Table routes
-  app.get('/api/tables', async (req, res, next) => {
+  // Table routes - All roles should be able to access tables data
+  app.get('/api/tables', isAuthenticated, async (req, res, next) => {
     try {
       const tables = await storage.getTables();
       res.json(tables);
@@ -488,6 +488,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedTable);
     } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Added PATCH endpoint for tables so ALL staff can update table occupied status
+  // This ensures all staff types can mark tables as occupied or available
+  app.patch('/api/tables/:id', isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Only allow updating occupied status through this endpoint
+      if (req.body.occupied === undefined) {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: "Only occupied status can be updated via this endpoint" 
+        });
+      }
+      
+      // Make sure occupied is a boolean
+      if (typeof req.body.occupied !== 'boolean') {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: "Occupied status must be a boolean" 
+        });
+      }
+      
+      // Get current table data to log change
+      const currentTable = await storage.getTable(id);
+      if (!currentTable) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+      
+      console.log(`Table ${id}: Changing occupied status from ${currentTable.occupied} to ${req.body.occupied}`);
+      
+      // Update just the occupied field
+      const updatedTable = await storage.updateTable(id, { occupied: req.body.occupied });
+      if (!updatedTable) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+      
+      res.json(updatedTable);
+    } catch (error) {
+      console.error("Error updating table occupied status:", error);
       next(error);
     }
   });
