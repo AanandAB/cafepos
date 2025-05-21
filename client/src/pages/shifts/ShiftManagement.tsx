@@ -204,7 +204,8 @@ export default function ShiftManagement() {
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-  const hasActiveShift = !!userShift;
+  // Check properly if the userShift is active (if it exists and has no clock-out time)
+  const hasActiveShift = userShift && Object.keys(userShift).length > 0 && !userShift.clockOut;
 
   return (
     <div className="space-y-6 p-6">
