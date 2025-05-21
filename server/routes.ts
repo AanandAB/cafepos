@@ -667,8 +667,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Menu item not found" });
       }
       
-      // Calculate total price
-      const totalPrice = menuItem.price * result.data.quantity;
+      // Check if stock tracking is enabled for this item
+      if (menuItem.stockQuantity !== null && menuItem.stockQuantity !== undefined && result.data.quantity) {
+        // Calculate new stock level
+        const newStockLevel = menuItem.stockQuantity - result.data.quantity;
+        
+        // Check if we have enough stock
+        if (newStockLevel < 0) {
+          return res.status(400).json({ 
+            message: "Insufficient stock", 
+            errors: `Only ${menuItem.stockQuantity} units available for ${menuItem.name}` 
+          });
+        }
+        
+        console.log(`Reducing stock for ${menuItem.name} from ${menuItem.stockQuantity} to ${newStockLevel}`);
+        
+        // Update the stock quantity
+        await storage.updateMenuItem(menuItem.id, {
+          stockQuantity: newStockLevel
+        });
+      }
+      
+      // Calculate total price - safely handle undefined quantity
+      const quantity = result.data.quantity || 1;
+      const totalPrice = menuItem.price * quantity;
       
       const orderItem = await storage.createOrderItem({
         ...result.data,
@@ -678,6 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(orderItem);
     } catch (error) {
+      console.error("Error creating order item and updating stock:", error);
       next(error);
     }
   });
