@@ -186,11 +186,11 @@ export default function ShiftManagement() {
         
         {/* Clock in/out actions */}
         <div className="flex items-center gap-4">
-          {hasActiveShift ? (
+          {hasActiveShift && activeShift ? (
             <Button 
               variant="destructive" 
               onClick={() => {
-                setSelectedShift(userShift);
+                setSelectedShift(activeShift);
                 setConfirmClockOutDialogOpen(true);
               }}
               disabled={clockOutMutation.isPending}
@@ -229,17 +229,17 @@ export default function ShiftManagement() {
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : hasActiveShift ? (
+          ) : hasActiveShift && activeShift ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 <span className="font-medium">Clock In Time:</span>
-                <span>{format(new Date(userShift.clockIn), 'dd MMM yyyy, hh:mm a')}</span>
+                <span>{format(new Date(activeShift.clockIn), 'dd MMM yyyy, hh:mm a')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
                 <span className="font-medium">Duration:</span>
-                <span>{formatDuration(userShift.clockIn, null)}</span>
+                <span>{formatDuration(activeShift.clockIn, null)}</span>
               </div>
               <Badge className="mt-2" variant="outline">Active Shift</Badge>
             </div>
