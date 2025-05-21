@@ -99,13 +99,14 @@ export default function Expenses() {
   
   const { toast } = useToast();
   
-  // Fetch expenses data
+  // Fetch expenses data including inventory costs
   const { data: expenses = [], isLoading, error } = useQuery({
     queryKey: ['/api/expenses', date?.from?.toISOString(), date?.to?.toISOString()],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (date?.from) params.append('startDate', date.from.toISOString());
       if (date?.to) params.append('endDate', date.to.toISOString());
+      params.append('includeInventory', 'true'); // Request to include inventory costs
       
       const response = await fetch(`/api/expenses?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch expenses');
@@ -522,8 +523,8 @@ export default function Expenses() {
                 <TableCell colSpan={6} className="text-center py-4">No expenses found for the selected period</TableCell>
               </TableRow>
             ) : (
-              expenses.map((expense) => (
-                <TableRow key={expense.id}>
+              expenses.map((expense: any) => (
+                <TableRow key={expense.id} className={expense.isInventoryItem ? "bg-blue-50" : ""}>
                   <TableCell className="font-medium">{expense.description}</TableCell>
                   <TableCell>
                     <Badge 
@@ -536,7 +537,9 @@ export default function Expenses() {
                   <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
                   <TableCell>{format(new Date(expense.date), 'dd MMM yyyy')}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
-                    {expense.notes || '-'}
+                    {expense.isInventoryItem ? 
+                      <span className="text-xs italic text-blue-600">Inventory Cost from Items</span> : 
+                      (expense.notes || '-')}
                   </TableCell>
                   <TableCell className="text-right">
                     <TooltipProvider>

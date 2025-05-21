@@ -872,8 +872,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Expense routes
   app.get('/api/expenses', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, includeInventory } = req.query;
       
+      // Get regular expenses based on date range
+      let expenses;
       if (startDate && endDate) {
         const start = new Date(startDate as string);
         const end = new Date(endDate as string);
@@ -883,14 +885,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Get expenses in date range
-        const expenses = await storage.getExpensesByDateRange(start, end);
-        
-        res.json(expenses);
+        expenses = await storage.getExpensesByDateRange(start, end);
       } else {
         // Get all expenses
-        const expenses = await storage.getExpenses();
-        res.json(expenses);
+        expenses = await storage.getExpenses();
       }
+      
+      // If includeInventory flag is set, add inventory costs as expenses
+      if (includeInventory === 'true') {
+        // Get all inventory items
+        const inventoryItems = await storage.getInventoryItems();
+        
+        // Create virtual expense entries for inventory items
+        const inventoryExpenses = inventoryItems
+          .filter(item => item.cost !== null && item.cost > 0)
+          .map(item => ({
+            id: -item.id, // Use negative IDs to avoid conflicts
+            description: `Inventory: ${item.name}`,
+            amount: item.cost ? item.cost * item.quantity : 0,
+            category: 'inventory',
+            userId: 1, // Default to admin user
+            date: new Date(),
+            isInventoryItem: true // Flag to identify inventory items
+          }));
+        
+        // Return combined expenses
+        return res.json([...expenses, ...inventoryExpenses]);
+      }
+      
+      // Return just regular expenses
+      res.json(expenses);
     } catch (error) {
       next(error);
     }
