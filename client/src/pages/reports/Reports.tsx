@@ -124,7 +124,34 @@ export default function Reports() {
   
   // Prepare data for sales over time chart
   const prepareSalesOverTimeData = () => {
-    if (!salesData || !salesData.orders) return [];
+    if (!salesData) return [];
+    
+    // Check if the backend provided enhanced sales trend data
+    if (salesData.salesTrend && Array.isArray(salesData.salesTrend)) {
+      // Format the dates according to the report type
+      return salesData.salesTrend.map((item: any) => {
+        const itemDate = new Date(item.date);
+        let formattedDate;
+        
+        if (reportType === "daily") {
+          formattedDate = format(itemDate, 'HH:mm');
+        } else if (reportType === "weekly") {
+          formattedDate = format(itemDate, 'EEE');
+        } else {
+          formattedDate = format(itemDate, 'dd MMM');
+        }
+        
+        return {
+          name: formattedDate,
+          sales: item.sales || 0,
+          profit: item.sales - (item.expenses || 0),
+          expenses: item.expenses || 0
+        };
+      });
+    }
+    
+    // Fallback to the original implementation if salesTrend is not available
+    if (!salesData.orders) return [];
     
     const { from, to } = dateRange;
     let dateFormat = 'HH:mm';
@@ -162,6 +189,9 @@ export default function Reports() {
     
     // Aggregate sales data
     salesData.orders.forEach((order: any) => {
+      // Skip non-completed orders for accurate reporting
+      if (order.status !== 'completed') return;
+      
       const orderDate = new Date(order.createdAt);
       
       if (reportType === "daily") {
@@ -190,7 +220,7 @@ export default function Reports() {
       }
     });
     
-    // Aggregate expense data
+    // Aggregate expense data including inventory costs
     if (salesData.expenses && salesData.expenses.length > 0) {
       salesData.expenses.forEach((expense: any) => {
         const expenseDate = new Date(expense.date);

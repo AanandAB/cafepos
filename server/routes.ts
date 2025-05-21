@@ -1002,7 +1002,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .map(item => ({
           id: -item.id, // Use negative IDs to avoid conflicts
           description: `Inventory: ${item.name}`,
-          amount: item.cost * item.quantity,
+          amount: item.cost ? item.cost * item.quantity : 0, // Safely handle null costs
           category: 'inventory',
           userId: 1, // Default to admin user
           date: new Date()
@@ -1037,7 +1037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTax += (order.taxAmount || 0);
           
           // Add to daily sales data
-          const orderDate = new Date(order.completedAt || order.createdAt);
+          const orderDate = new Date(order.completedAt || order.createdAt || new Date());
           const dateKey = orderDate.toISOString().split('T')[0];
           dailySales[dateKey] = (dailySales[dateKey] || 0) + orderTotal;
           
@@ -1093,8 +1093,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert daily sales to array format for charting
       const salesTrend = Object.entries(dailySales).map(([date, amount]) => ({
         date,
-        sales: amount
+        sales: amount,
+        expenses: 0 // Initialize expenses, will be filled later
       })).sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Add expenses to each day in the sales trend
+      if (allExpenses && allExpenses.length > 0) {
+        const expensesByDate: Record<string, number> = {};
+        
+        // Group expenses by date
+        allExpenses.forEach(expense => {
+          if (expense.date) {
+            const expenseDate = new Date(expense.date);
+            const dateKey = expenseDate.toISOString().split('T')[0];
+            expensesByDate[dateKey] = (expensesByDate[dateKey] || 0) + (expense.amount || 0);
+          }
+        });
+        
+        // Add expenses to sales trend data
+        salesTrend.forEach(item => {
+          item.expenses = expensesByDate[item.date] || 0;
+        });
+      }
       
       // Get category names for the sales by category data
       const categoryNames = {};
