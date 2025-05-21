@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Category routes
-  app.get('/api/categories', async (req, res, next) => {
+  app.get('/api/categories', isAuthenticated, async (req, res, next) => {
     try {
       const categories = await storage.getCategories();
       res.json(categories);
@@ -265,8 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Menu Item routes
-  app.get('/api/menu-items', async (req, res, next) => {
+  // Menu Item routes - All authenticated users should be able to see menu items
+  app.get('/api/menu-items', isAuthenticated, async (req, res, next) => {
     try {
       const menuItems = await storage.getMenuItems();
       res.json(menuItems);
@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/menu-items/category/:categoryId', async (req, res, next) => {
+  app.get('/api/menu-items/category/:categoryId', isAuthenticated, async (req, res, next) => {
     try {
       const categoryId = parseInt(req.params.categoryId);
       const menuItems = await storage.getMenuItemsByCategory(categoryId);
@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/menu-items/:id', async (req, res, next) => {
+  app.patch('/api/menu-items/:id', isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -339,6 +339,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`API: Updating menu item ${id} stock to: ${req.body.stockQuantity}`);
       
       const updatedMenuItem = await storage.updateMenuItem(id, req.body);
+      
+      if (!updatedMenuItem) {
+        return res.status(500).json({ message: "Failed to update menu item" });
+      }
       
       // Explicitly log the result to help diagnose issues
       console.log(`API: Menu item ${id} updated, new stock: ${updatedMenuItem.stockQuantity}`);
