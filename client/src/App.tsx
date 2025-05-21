@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/Login";
 import { AppProvider } from "@/contexts/AppContext";
+import { ShiftProvider } from "@/contexts/ShiftContext";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import PosLayout from "@/pages/pos/PosLayout";
@@ -101,10 +102,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <ShiftProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ShiftProvider>
       </AppProvider>
     </QueryClientProvider>
   );
