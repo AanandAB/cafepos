@@ -1121,41 +1121,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0 // Initialize expenses, will be filled later
       })).sort((a, b) => a.date.localeCompare(b.date));
       
-      // Calculate total inventory expenses from the items
-      const totalInventoryExpense = inventoryItems
+      // Get all the inventory expense amounts
+      const inventoryExpenseTotal = inventoryItems
         .filter(item => item.cost !== null && item.cost > 0)
         .reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
+
+      // Create a better expense distribution for the chart
+      const dateMap = {}; // Map to hold expenses by date
       
-      // Add inventory expenses to the total expenses
-      const dailyExpenseShare = totalInventoryExpense / salesTrend.length;
-          
-      // Add expenses to each day in the sales trend
-      if (allExpenses && allExpenses.length > 0) {
-        const expensesByDate: Record<string, number> = {};
-        
-        // Group expenses by date
-        allExpenses.forEach(expense => {
+      // First assign regular expenses to dates
+      if (expenses.length > 0) {
+        expenses.forEach(expense => {
           if (expense.date) {
             const expenseDate = new Date(expense.date);
             const dateKey = expenseDate.toISOString().split('T')[0];
-            expensesByDate[dateKey] = (expensesByDate[dateKey] || 0) + (expense.amount || 0);
+            dateMap[dateKey] = (dateMap[dateKey] || 0) + (expense.amount || 0);
           }
         });
-        
-        // For any date without expenses, distribute inventory costs evenly
-        salesTrend.forEach(item => {
-          // If we have specific expenses for this date, use them
-          const regularExpense = expensesByDate[item.date] || 0;
-          
-          // Always add the proportional inventory expense
-          item.expenses = regularExpense + dailyExpenseShare;
-        });
-      } else {
-        // If no expense records exist, just distribute inventory costs
-        salesTrend.forEach(item => {
-          item.expenses = dailyExpenseShare;
-        });
       }
+      
+      // Add inventory costs to the chart data
+      // If we have sales data points, distribute across them proportionally
+      // Otherwise distribute evenly
+      if (salesTrend.length > 0) {
+        // Calculate the daily inventory expense (divide by number of data points)
+        const dailyInventoryExpense = inventoryExpenseTotal / salesTrend.length;
+        
+        // Add inventory costs and expenses to the chart data
+        salesTrend.forEach(item => {
+          // Get regular expenses for this date (if any)
+          const regularExpense = dateMap[item.date] || 0;
+          
+          // Add fixed inventory expense amount to every day in the chart
+          item.expenses = regularExpense + dailyInventoryExpense;
+          
+          // Calculate profit based on sales and expenses
+          item.profit = item.sales - item.expenses;
+        });
+      } 
+      
+      // Also update the total expenses calculation to include inventory
+      const totalExpensesWithInventory = totalExpenses + inventoryExpenseTotal;
       
       // Get category names for the sales by category data
       const categoryNames = {};
@@ -1176,14 +1182,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10); // Top 10 most popular items
       
+      // Return the final response with updated expense and profit values
       res.json({
         startDate: start,
         endDate: end,
         totalOrders: orders.length,
         totalSales,
         totalTax,
-        totalExpenses,
-        totalProfit,
+        totalExpenses: totalExpensesWithInventory,
+        totalProfit: totalSales - totalExpensesWithInventory,
         totalCogs,
         totalItemsSold,
         averageOrderValue: orders.length > 0 ? totalSales / orders.length : 0,
@@ -1194,7 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         salesByCategory,
         popularItems,
         orders,
-        expenses: allExpenses // Include inventory items as expenses
+        expenses: allExpenses // Include regular expense records
       });
     } catch (error) {
       next(error);

@@ -457,28 +457,34 @@ export default function Reports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Legend />
+                  <Tooltip 
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc' }}
+                    itemStyle={{ padding: '2px 0' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: 10 }} />
                   <Line 
                     type="monotone" 
                     dataKey="sales" 
                     name="Revenue" 
-                    stroke="hsl(var(--primary))" 
-                    activeDot={{ r: 8 }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="profit" 
-                    name="Profit" 
-                    stroke="green" 
-                    activeDot={{ r: 6 }} 
+                    stroke="#3b82f6" 
+                    activeDot={{ r: 8 }}
+                    strokeWidth={2}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="expenses" 
                     name="Expenses" 
-                    stroke="red" 
-                    strokeDasharray="3 3"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="profit" 
+                    name="Profit" 
+                    stroke="#22c55e" 
+                    activeDot={{ r: 6 }}
+                    strokeWidth={2}
                   />
                 </LineChart>
               </ResponsiveContainer>
