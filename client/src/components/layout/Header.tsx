@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Moon, Sun, Clock } from "lucide-react";
+import { Moon, Sun, Clock, LogOut, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +23,9 @@ export default function Header() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Use the shared shift context for consistent state across components
+  const { activeShift, hasActiveShift, refreshShiftData } = useShift();
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -56,32 +59,12 @@ export default function Header() {
     });
   };
 
-  // Get active shift - make sure we're getting the latest data
-  const { data: activeShift, refetch: refetchShift } = useQuery({ 
-    queryKey: ['/api/shifts/user', user?.id],
-    enabled: !!user,
-  });
-  
-  // Refetch shifts data every minute to ensure accurate clock status
-  useEffect(() => {
-    if (user) {
-      const shiftTimer = setInterval(() => {
-        refetchShift();
-      }, 60000); // Check every minute
-      return () => clearInterval(shiftTimer);
-    }
-  }, [user, refetchShift]);
-
   // Clock in mutation
   const clockInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/shifts/clock-in"),
     onSuccess: () => {
-      // Immediately refetch to update the button state
-      refetchShift();
-      
-      // Also invalidate all related queries to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      // Use the centralized refresh function from our ShiftContext
+      refreshShiftData();
       
       toast({
         title: "Clocked in",
@@ -101,12 +84,8 @@ export default function Header() {
   const clockOutMutation = useMutation({
     mutationFn: (shiftId: number) => apiRequest("POST", `/api/shifts/clock-out/${shiftId}`),
     onSuccess: () => {
-      // Immediately refetch to update the button state
-      refetchShift();
-      
-      // Also invalidate all related queries to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      // Use the centralized refresh function from our ShiftContext
+      refreshShiftData();
       
       toast({
         title: "Clocked out",
@@ -142,13 +121,8 @@ export default function Header() {
     }
   };
 
-  // Check if the user has an active shift from the API response
-  // If activeShift is an object with clockIn but no clockOut, it's active
-  const hasActiveShift = activeShift && typeof activeShift === 'object' && 
-    'clockIn' in activeShift && !activeShift.clockOut;
-    
   // Get the ID of the active shift for clock-out functionality
-  const activeShiftId = hasActiveShift && activeShift ? activeShift.id : undefined;
+  const activeShiftId = activeShift ? activeShift.id : undefined;
 
   return (
     <header className="bg-background border-b h-16 px-4 flex items-center justify-between">
@@ -175,7 +149,12 @@ export default function Header() {
                 onClick={() => activeShiftId && clockOutMutation.mutate(activeShiftId)}
                 disabled={clockOutMutation.isPending}
               >
-                {clockOutMutation.isPending ? 'Processing...' : 'Clock Out'}
+                {clockOutMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Clock Out
               </Button>
             ) : (
               <Button 
@@ -184,21 +163,38 @@ export default function Header() {
                 onClick={() => clockInMutation.mutate()}
                 disabled={clockInMutation.isPending}
               >
-                {clockInMutation.isPending ? 'Processing...' : 'Clock In'}
+                {clockInMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Clock className="mr-2 h-4 w-4" />
+                )}
+                Clock In
               </Button>
             )}
             
             <Separator orientation="vertical" className="h-8" />
+            
+            <div className="flex items-center gap-2">
+              <div className="hidden md:block text-sm font-medium">
+                {user?.name}
+              </div>
+              <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium">
+                {user?.name?.[0]?.toUpperCase()}
+              </div>
+            </div>
           </>
         )}
         
         <div className="flex items-center space-x-2">
-          <div className="hidden sm:flex items-center space-x-2">
-            <Label htmlFor="dark-mode">
-              {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </Label>
-            <Switch id="dark-mode" checked={isDarkMode} onCheckedChange={toggleDarkMode} />
-          </div>
+          <Switch
+            id="dark-mode"
+            checked={isDarkMode}
+            onCheckedChange={toggleDarkMode}
+          />
+          <Label htmlFor="dark-mode" className="sr-only">
+            Dark Mode
+          </Label>
+          {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </div>
       </div>
     </header>

@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { EmployeeShift } from '@shared/schema';
 import { useAuth } from '@/hooks/useAuth';
+import { useShift } from '@/contexts/ShiftContext';
 
 export default function ShiftManagement() {
   const { user } = useAuth();
@@ -47,7 +48,10 @@ export default function ShiftManagement() {
   const [confirmClockOutDialogOpen, setConfirmClockOutDialogOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<EmployeeShift | null>(null);
 
-  // Fetch active shifts
+  // Use the shared shift context for consistent state across components
+  const { activeShift, hasActiveShift, refreshShiftData, isLoading: loadingUserShift } = useShift();
+  
+  // Fetch active shifts (all employees)
   const { data: activeShifts = [], isLoading: loadingShifts } = useQuery({
     queryKey: ['/api/shifts'],
     queryFn: async () => {
@@ -56,25 +60,6 @@ export default function ShiftManagement() {
       return response.json();
     }
   });
-
-  // Fetch current user's shift
-  const { data: userShift, isLoading: loadingUserShift, refetch: refetchUserShift } = useQuery({
-    queryKey: ['/api/shifts/user'],
-    queryFn: async () => {
-      const response = await fetch('/api/shifts/user');
-      if (!response.ok) throw new Error('Failed to fetch user shift');
-      return response.json();
-    }
-  });
-  
-  // Manual refresh function that can be called after operations
-  const manualRefresh = () => {
-    // Force refresh user shift data
-    refetchUserShift();
-    
-    // Also refresh the shifts list
-    queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-  };
 
   // Clock in mutation
   const clockInMutation = useMutation({
@@ -92,26 +77,13 @@ export default function ShiftManagement() {
       return response.json();
     },
     onSuccess: () => {
-      // Immediately refresh to update the button state - use refetchQueries
-      // to ensure we get fresh data from the server
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/shifts/user']
-      });
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/shifts']
-      });
+      // Use the centralized refresh function from our ShiftContext
+      refreshShiftData();
       
-      // Show success message
       toast({
         title: 'Success',
         description: 'You have successfully clocked in.',
       });
-      
-      // Force another refetch after a short delay to ensure both buttons are in sync
-      setTimeout(() => {
-        // Refresh all related queries to ensure full synchronization across the app
-        queryClient.refetchQueries();
-      }, 200);
     },
     onError: (error) => {
       toast({
@@ -141,24 +113,13 @@ export default function ShiftManagement() {
       // Close dialog first
       setConfirmClockOutDialogOpen(false);
       
-      // Use refetchQueries instead of invalidateQueries to guarantee fresh data
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/shifts/user']
-      });
-      queryClient.refetchQueries({ 
-        queryKey: ['/api/shifts']
-      });
+      // Use the centralized refresh function from our ShiftContext
+      refreshShiftData();
       
-      // Show success message
       toast({
         title: 'Success',
         description: 'You have successfully clocked out.',
       });
-      
-      // Force global refresh of all queries to ensure UI syncs properly everywhere
-      setTimeout(() => {
-        queryClient.refetchQueries();
-      }, 200);
     },
     onError: (error) => {
       toast({
@@ -214,10 +175,6 @@ export default function ShiftManagement() {
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-  // Check properly if the userShift is active (if it exists and has no clock-out time)
-  // Ensure we're detecting it the same way as the header component
-  const hasActiveShift = userShift && typeof userShift === 'object' && 
-    'clockIn' in userShift && !userShift.clockOut;
 
   return (
     <div className="space-y-6 p-6">
