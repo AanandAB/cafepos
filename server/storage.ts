@@ -164,8 +164,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMenuItem(id: number, data: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
-    const [item] = await db.update(menuItems).set(data).where(eq(menuItems.id, id)).returning();
-    return item;
+    console.log(`DEBUG: Updating menu item ${id} with data:`, JSON.stringify(data, null, 2));
+    
+    // First check if the item exists
+    const existingItem = await this.getMenuItem(id);
+    if (!existingItem) {
+      console.error(`Cannot update menu item ${id} - item does not exist`);
+      return undefined;
+    }
+    
+    console.log(`DEBUG: Current menu item ${id} data:`, JSON.stringify(existingItem, null, 2));
+    
+    try {
+      const [item] = await db.update(menuItems)
+        .set(data)
+        .where(eq(menuItems.id, id))
+        .returning();
+      
+      console.log(`DEBUG: Updated menu item ${id} result:`, JSON.stringify(item, null, 2));
+      return item;
+    } catch (error) {
+      console.error(`Error updating menu item ${id}:`, error);
+      return undefined;
+    }
   }
 
   async deleteMenuItem(id: number): Promise<boolean> {

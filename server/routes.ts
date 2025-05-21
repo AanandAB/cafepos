@@ -656,47 +656,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order Item routes
   app.post('/api/order-items', isAuthenticated, async (req, res, next) => {
     try {
+      console.log("Creating order item with data:", JSON.stringify(req.body, null, 2));
+      
       const result = insertOrderItemSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
       }
       
+      console.log("Validated order item data:", JSON.stringify(result.data, null, 2));
+      
       // Get the menu item to calculate total price
       const menuItem = await storage.getMenuItem(result.data.menuItemId);
       if (!menuItem) {
+        console.error(`Menu item with ID ${result.data.menuItemId} not found`);
         return res.status(404).json({ message: "Menu item not found" });
       }
       
+      console.log("Found menu item:", JSON.stringify(menuItem, null, 2));
+      
       // Check if stock tracking is enabled for this item
-      if (menuItem.stockQuantity !== null && menuItem.stockQuantity !== undefined && result.data.quantity) {
+      if (menuItem.stockQuantity !== null && menuItem.stockQuantity !== undefined) {
+        const orderQuantity = result.data.quantity || 1;
+        console.log(`Stock tracking enabled for ${menuItem.name}. Current stock: ${menuItem.stockQuantity}, Order quantity: ${orderQuantity}`);
+        
         // Calculate new stock level
-        const newStockLevel = menuItem.stockQuantity - result.data.quantity;
+        const newStockLevel = menuItem.stockQuantity - orderQuantity;
         
         // Check if we have enough stock
         if (newStockLevel < 0) {
+          console.log(`Insufficient stock for ${menuItem.name}. Available: ${menuItem.stockQuantity}, Requested: ${orderQuantity}`);
           return res.status(400).json({ 
             message: "Insufficient stock", 
             errors: `Only ${menuItem.stockQuantity} units available for ${menuItem.name}` 
           });
         }
         
-        console.log(`Reducing stock for ${menuItem.name} from ${menuItem.stockQuantity} to ${newStockLevel}`);
+        console.log(`STOCK UPDATE: Reducing stock for ${menuItem.name} from ${menuItem.stockQuantity} to ${newStockLevel}`);
         
-        // Update the stock quantity
-        await storage.updateMenuItem(menuItem.id, {
-          stockQuantity: newStockLevel
-        });
+        try {
+          // Update the stock quantity - store the result to confirm it worked
+          const updatedItem = await storage.updateMenuItem(menuItem.id, {
+            stockQuantity: newStockLevel
+          });
+          
+          console.log(`Stock update result for ${menuItem.name}:`, updatedItem ? 
+            `Success! New stock level: ${updatedItem.stockQuantity}` : 
+            "Failed to update menu item");
+            
+          if (!updatedItem) {
+            console.error("Stock update failed - no item returned from storage.updateMenuItem");
+          }
+        } catch (updateError) {
+          console.error("Error updating stock quantity:", updateError);
+        }
+      } else {
+        console.log(`Stock tracking not enabled for ${menuItem.name}`);
       }
       
       // Calculate total price - safely handle undefined quantity
       const quantity = result.data.quantity || 1;
       const totalPrice = menuItem.price * quantity;
       
+      console.log(`Creating order item for ${menuItem.name}, quantity: ${quantity}, price: ${totalPrice}`);
+      
       const orderItem = await storage.createOrderItem({
         ...result.data,
         unitPrice: menuItem.price,
         totalPrice
       });
+      
+      console.log("Order item created successfully:", JSON.stringify(orderItem, null, 2));
+      
+      // Immediately verify the stock was updated
+      const verifyItem = await storage.getMenuItem(result.data.menuItemId);
+      console.log(`Stock verification for ${menuItem.name}: original=${menuItem.stockQuantity}, current=${verifyItem?.stockQuantity}`);
       
       res.status(201).json(orderItem);
     } catch (error) {
