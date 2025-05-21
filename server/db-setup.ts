@@ -10,42 +10,22 @@ export async function initializeDatabase() {
   console.log('Initializing database...');
   
   try {
-    // Check if users exist
-    const existingUsers = await db.select().from(users);
+    // Check if admin user exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, 'admin'));
 
-    if (existingUsers.length === 0) {
-      // Create users for different roles
-      await db.insert(users).values([
-        {
-          name: "Admin",
-          username: "admin",
-          password: "admin123", // In a real app, use hashed passwords
-          role: "admin",
-          active: true
-        },
-        {
-          name: "Manager",
-          username: "manager",
-          password: "manager123",
-          role: "manager",
-          active: true
-        },
-        {
-          name: "Staff Member",
-          username: "staff",
-          password: "staff123",
-          role: "staff", 
-          active: true
-        },
-        {
-          name: "Cashier",
-          username: "cashier",
-          password: "cashier123",
-          role: "cashier",
-          active: true
-        }
-      ]);
-      console.log('Created users with different roles');
+    if (!existingUser) {
+      // Create admin user
+      await db.insert(users).values({
+        name: "Admin",
+        username: "admin",
+        password: "admin123", // In a real app, use hashed passwords
+        role: "admin",
+        active: true
+      });
+      console.log('Created admin user');
     }
 
     // Check if categories exist

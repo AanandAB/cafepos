@@ -12,8 +12,14 @@ export async function getCurrentUser(): Promise<User | null> {
     const response = await apiRequest("GET", "/api/auth/user");
     return await response.json();
   } catch (error) {
-    // User is not authenticated, return null
-    return null;
+    // Auto-login functionality
+    try {
+      const user = await loginUser("admin", "admin123");
+      return user;
+    } catch (loginError) {
+      console.error("Auto-login failed:", loginError);
+      return null;
+    }
   }
 }
 

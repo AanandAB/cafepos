@@ -102,12 +102,8 @@ export default function Login() {
                   <p className="text-sm text-red-500">{errors.password.message}</p>
                 )}
               </div>
-              <div className="text-center text-sm space-y-1">
-                <p className="font-medium">Test Credentials:</p>
-                <p>Admin: admin / admin123</p>
-                <p>Manager: manager / manager123</p>
-                <p>Staff: staff / staff123</p>
-                <p>Cashier: cashier / cashier123</p>
+              <div className="text-center text-sm">
+                <p>Default login: admin / admin123</p>
               </div>
             </CardContent>
             <CardFooter>
