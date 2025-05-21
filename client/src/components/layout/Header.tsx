@@ -160,7 +160,7 @@ export default function Header() {
                 {clockInMutation.isPending ? 'Processing...' : 'Clock In'}
               </Button>
             )}
-            
+            console.log(activeShiftId)
             <Separator orientation="vertical" className="h-8" />
           </>
         )}
