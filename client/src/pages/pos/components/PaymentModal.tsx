@@ -168,10 +168,10 @@ export default function PaymentModal({
           const menuItem = await menuItemResponse.json();
           
           // Calculate new stock level, ensuring it never goes below 0
-          const currentStock = menuItem.stockQuantity || 0;
+          const currentStock = menuItem.stockQuantity ?? 0;
           const newStock = Math.max(0, currentStock - item.quantity);
           
-          console.log(`Updating stock for ${menuItem.name}: ${currentStock} -> ${newStock}`);
+          console.log(`Updating stock for ${menuItem.name} (ID: ${menuItem.id}): ${currentStock} -> ${newStock}`);
           
           // Use direct fetch instead of apiRequest for more reliable update
           const updateResponse = await fetch(`/api/menu-items/${item.menuItemId}`, {
@@ -234,9 +234,8 @@ export default function PaymentModal({
       return completedOrder;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/orders/active'] });
+      // Use our new helper to refresh all data across the app
+      invalidateAllQueries();
       
       toast({
         title: "Order completed",

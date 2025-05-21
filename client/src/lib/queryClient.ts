@@ -41,13 +41,25 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// This helper function updates all related data to keep the UI in sync
+export const invalidateAllQueries = () => {
+  // Invalidate all relevant queries to ensure full app synchronization
+  queryClient.invalidateQueries({ queryKey: ['/api/menu-items'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/orders/active'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/reports/sales'] });
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      // Changed from Infinity to 30 seconds to ensure data stays fresh
+      staleTime: 30000,
       retry: false,
     },
     mutations: {

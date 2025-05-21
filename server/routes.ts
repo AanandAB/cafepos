@@ -319,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/menu-items/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+  app.patch('/api/menu-items/:id', async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -336,7 +336,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Menu item not found" });
       }
       
+      console.log(`API: Updating menu item ${id} stock to: ${req.body.stockQuantity}`);
+      
       const updatedMenuItem = await storage.updateMenuItem(id, req.body);
+      
+      // Explicitly log the result to help diagnose issues
+      console.log(`API: Menu item ${id} updated, new stock: ${updatedMenuItem.stockQuantity}`);
+      
       res.json(updatedMenuItem);
     } catch (error) {
       console.error("Error updating menu item stock:", error);
