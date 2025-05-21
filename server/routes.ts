@@ -987,16 +987,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid date format" });
       }
       
+      // Get orders in date range
       const orders = await storage.getOrdersByDateRange(start, end);
       
       // Get expenses for the same period
       const expenses = await storage.getExpensesByDateRange(start, end);
       
-      // Calculate totals - fix to ensure proper calculation of all values
+      // Get inventory items to account for inventory costs
+      const inventoryItems = await storage.getInventoryItems();
+      
+      // Create inventory expenses - each inventory item with a cost should be added as an expense
+      const inventoryExpenses = inventoryItems
+        .filter(item => item.cost !== null && item.cost > 0)
+        .map(item => ({
+          id: -item.id, // Use negative IDs to avoid conflicts
+          description: `Inventory: ${item.name}`,
+          amount: item.cost * item.quantity,
+          category: 'inventory',
+          userId: 1, // Default to admin user
+          date: new Date()
+        }));
+      
+      // Add inventory expenses to regular expenses
+      const allExpenses = [...expenses, ...inventoryExpenses];
+      
+      // Calculate totals with improved accuracy
       let totalSales = 0;
       let totalTax = 0;
-
+      let totalCogs = 0; // Cost of goods sold
+      let totalItemsSold = 0;
+      
       // Process each order and get its items to calculate actual sales
+      const dailySales = {}; // For trend data, indexed by date string
+      const categorySales = {}; // Sales by category
+      const itemPopularity = {}; // Count of each menu item sold
+      
+      // Process all orders
       for (const order of orders) {
         if (order.status === 'completed') {
           // Get order items to calculate actual sales
@@ -1009,10 +1035,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Add to running totals
           totalSales += orderTotal;
           totalTax += (order.taxAmount || 0);
+          
+          // Add to daily sales data
+          const orderDate = new Date(order.completedAt || order.createdAt);
+          const dateKey = orderDate.toISOString().split('T')[0];
+          dailySales[dateKey] = (dailySales[dateKey] || 0) + orderTotal;
+          
+          // Process order items for more analytics
+          for (const item of orderItems) {
+            // Get menu item details
+            const menuItem = await storage.getMenuItem(item.menuItemId);
+            
+            if (menuItem) {
+              // Track category sales
+              if (menuItem.categoryId) {
+                categorySales[menuItem.categoryId] = (categorySales[menuItem.categoryId] || 0) + 
+                  (item.quantity * item.unitPrice);
+              }
+              
+              // Track item popularity
+              itemPopularity[menuItem.name] = (itemPopularity[menuItem.name] || 0) + item.quantity;
+              
+              // Track total items sold
+              totalItemsSold += item.quantity;
+              
+              // Estimate cost of goods sold (if we can)
+              // This would be more accurate with a proper COGS tracking system
+              // For now we use a simple estimation based on price
+              totalCogs += (item.quantity * item.unitPrice * 0.4); // Assume 40% COGS
+            }
+          }
         }
       }
       
-      const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+      // Calculate total expenses including inventory costs
+      const totalExpenses = allExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
       
       // Calculate profit (sales minus expenses)
       const totalProfit = totalSales - totalExpenses;
@@ -1027,11 +1084,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Group expenses by category
       const expenseCategoryTotals: Record<string, number> = {};
-      expenses.forEach(expense => {
+      allExpenses.forEach(expense => {
         if (expense.category) {
           expenseCategoryTotals[expense.category] = (expenseCategoryTotals[expense.category] || 0) + expense.amount;
         }
       });
+      
+      // Convert daily sales to array format for charting
+      const salesTrend = Object.entries(dailySales).map(([date, amount]) => ({
+        date,
+        sales: amount
+      })).sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Get category names for the sales by category data
+      const categoryNames = {};
+      const categories = await storage.getCategories();
+      categories.forEach(cat => {
+        categoryNames[cat.id] = cat.name;
+      });
+      
+      // Format category sales for charts
+      const salesByCategory = Object.entries(categorySales).map(([catId, amount]) => ({
+        category: categoryNames[catId] || `Category ${catId}`,
+        sales: amount
+      }));
+      
+      // Format item popularity for charts
+      const popularItems = Object.entries(itemPopularity)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10); // Top 10 most popular items
       
       res.json({
         startDate: start,
@@ -1041,10 +1123,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalTax,
         totalExpenses,
         totalProfit,
+        totalCogs,
+        totalItemsSold,
+        averageOrderValue: orders.length > 0 ? totalSales / orders.length : 0,
+        grossMargin: totalSales > 0 ? ((totalSales - totalCogs) / totalSales) * 100 : 0,
         paymentMethodTotals,
         expenseCategoryTotals,
+        salesTrend,
+        salesByCategory,
+        popularItems,
         orders,
-        expenses
+        expenses: allExpenses // Include inventory items as expenses
       });
     } catch (error) {
       next(error);
