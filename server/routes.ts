@@ -783,6 +783,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get current user's active shift (for clocking in/out)
+  app.get('/api/shifts/user', isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      // Get this user's active shift (if any)
+      const shifts = await storage.getEmployeeShiftsByUser(user.id);
+      const activeShift = shifts.find(shift => shift.clockOut === null);
+      
+      // Return the active shift or an empty object
+      res.json(activeShift || {});
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   app.get('/api/shifts/user/:userId', isAuthenticated, async (req, res, next) => {
     try {
       const userId = parseInt(req.params.userId);
