@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { 
@@ -67,14 +67,14 @@ export default function ShiftManagement() {
     }
   });
   
-  // Refetch user shift data periodically to ensure UI always shows correct status
-  useEffect(() => {
-    const shiftRefreshTimer = setInterval(() => {
-      refetchUserShift();
-    }, 30000); // Check every 30 seconds
+  // Manual refresh function that can be called after operations
+  const manualRefresh = () => {
+    // Force refresh user shift data
+    refetchUserShift();
     
-    return () => clearInterval(shiftRefreshTimer);
-  }, [refetchUserShift]);
+    // Also refresh the shifts list
+    queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+  };
 
   // Clock in mutation
   const clockInMutation = useMutation({
