@@ -92,9 +92,14 @@ export default function ShiftManagement() {
       return response.json();
     },
     onSuccess: () => {
-      // Immediately refresh to update the button state
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      // Immediately refresh to update the button state - use refetchQueries
+      // to ensure we get fresh data from the server
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/shifts/user']
+      });
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/shifts']
+      });
       
       // Show success message
       toast({
@@ -102,9 +107,10 @@ export default function ShiftManagement() {
         description: 'You have successfully clocked in.',
       });
       
-      // Force an immediate refetch to ensure UI updates
+      // Force another refetch after a short delay to ensure both buttons are in sync
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+        // Refresh all related queries to ensure full synchronization across the app
+        queryClient.refetchQueries();
       }, 200);
     },
     onError: (error) => {
@@ -135,9 +141,13 @@ export default function ShiftManagement() {
       // Close dialog first
       setConfirmClockOutDialogOpen(false);
       
-      // Immediately refresh to update the button state
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      // Use refetchQueries instead of invalidateQueries to guarantee fresh data
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/shifts/user']
+      });
+      queryClient.refetchQueries({ 
+        queryKey: ['/api/shifts']
+      });
       
       // Show success message
       toast({
@@ -145,9 +155,9 @@ export default function ShiftManagement() {
         description: 'You have successfully clocked out.',
       });
       
-      // Force an immediate refetch to ensure UI updates
+      // Force global refresh of all queries to ensure UI syncs properly everywhere
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+        queryClient.refetchQueries();
       }, 200);
     },
     onError: (error) => {
@@ -205,7 +215,9 @@ export default function ShiftManagement() {
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   // Check properly if the userShift is active (if it exists and has no clock-out time)
-  const hasActiveShift = userShift && Object.keys(userShift).length > 0 && !userShift.clockOut;
+  // Ensure we're detecting it the same way as the header component
+  const hasActiveShift = userShift && typeof userShift === 'object' && 
+    'clockIn' in userShift && !userShift.clockOut;
 
   return (
     <div className="space-y-6 p-6">
