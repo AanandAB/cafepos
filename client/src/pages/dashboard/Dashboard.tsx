@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { 
   Coffee, 
   CreditCard, 
@@ -10,9 +13,12 @@ import {
   Users, 
   ShoppingCart, 
   Clock, 
-  AlertTriangle
+  AlertTriangle,
+  Utensils,
+  Package,
+  LayoutDashboard
 } from "lucide-react";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import {
   LineChart,
   Line,
@@ -28,6 +34,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
@@ -38,9 +46,459 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Role-specific dashboard components
+const AdminDashboard = ({ timeRange, salesData, ordersData, inventoryData, tableData, staffData }) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(salesData?.total || 0)}</div>
+            <p className="text-xs text-muted-foreground">
+              {salesData?.percentChange > 0 ? '+' : ''}{salesData?.percentChange || 0}% from previous {timeRange}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{ordersData?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {ordersData?.activeOrders || 0} active orders
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inventory Alerts</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inventoryData?.lowStock || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Items below minimum stock level
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Table Status</CardTitle>
+            <Coffee className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tableData?.occupied || 0}/{tableData?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Tables currently occupied
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Sales Overview</CardTitle>
+            <CardDescription>Daily revenue for the selected period</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={salesData?.dailyData || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                <Legend />
+                <Line type="monotone" dataKey="amount" stroke="#8884d8" activeDot={{ r: 8 }} name="Sales" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Payment Methods</CardTitle>
+            <CardDescription>Distribution by payment type</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={salesData?.paymentMethods || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {(salesData?.paymentMethods || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Orders</CardTitle>
+            <CardDescription>Orders currently in progress</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {ordersData?.recent?.map(order => (
+                <div key={order.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">Order #{order.id}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {order.table ? `Table ${order.table}` : 'Takeaway'} • {formatCurrency(order.amount)}
+                    </div>
+                  </div>
+                  <Badge variant={order.status === 'completed' ? 'default' : 'outline'}>
+                    {order.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Staff on Duty</CardTitle>
+            <CardDescription>Currently active shifts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {staffData?.shifts?.map(shift => (
+                <div key={shift.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">{shift.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {shift.role} • Since {format(new Date(shift.startTime), 'h:mm a')}
+                    </div>
+                  </div>
+                  <Clock className="h-4 w-4 text-green-500" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Alerts</CardTitle>
+            <CardDescription>Items that need attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {inventoryData?.alerts?.map(item => (
+                <div key={item.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {item.quantity} {item.unit} remaining
+                    </div>
+                  </div>
+                  <Badge variant="destructive">Low Stock</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// Manager Dashboard - Similar to admin but with fewer financial options
+const ManagerDashboard = ({ timeRange, salesData, ordersData, inventoryData, tableData, staffData }) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(salesData?.total || 0)}</div>
+            <p className="text-xs text-muted-foreground">
+              For {timeRange}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{ordersData?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {ordersData?.activeOrders || 0} active orders
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Staff</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{staffData?.active || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Staff members on duty
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tables</CardTitle>
+            <Coffee className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tableData?.occupied || 0}/{tableData?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Tables currently occupied
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Orders</CardTitle>
+            <CardDescription>Orders currently in progress</CardDescription>
+          </CardHeader>
+          <CardContent className="h-72 overflow-auto">
+            <div className="space-y-2">
+              {ordersData?.recent?.map(order => (
+                <div key={order.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">Order #{order.id}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {order.table ? `Table ${order.table}` : 'Takeaway'} • {formatCurrency(order.amount)}
+                    </div>
+                  </div>
+                  <Badge variant={order.status === 'completed' ? 'default' : 'outline'}>
+                    {order.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Staff on Duty</CardTitle>
+            <CardDescription>Currently active shifts</CardDescription>
+          </CardHeader>
+          <CardContent className="h-72 overflow-auto">
+            <div className="space-y-2">
+              {staffData?.shifts?.map(shift => (
+                <div key={shift.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">{shift.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {shift.role} • Since {format(new Date(shift.startTime), 'h:mm a')}
+                    </div>
+                  </div>
+                  <Clock className="h-4 w-4 text-green-500" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Alerts</CardTitle>
+            <CardDescription>Items that need attention</CardDescription>
+          </CardHeader>
+          <CardContent className="h-72 overflow-auto">
+            <div className="space-y-2">
+              {inventoryData?.alerts?.map(item => (
+                <div key={item.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {item.quantity} {item.unit} remaining
+                    </div>
+                  </div>
+                  <Badge variant="destructive">Low Stock</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// Staff Dashboard - Focused on tables and orders
+const StaffDashboard = ({ tableData, ordersData }) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Table Status</CardTitle>
+            <CardDescription>Current table occupancy</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {tableData?.tables?.map(table => (
+                <div key={table.id} className={`p-4 rounded-lg border ${
+                  table.occupied ? 'bg-primary/10 border-primary' : 'bg-muted/50 border-muted'
+                }`}>
+                  <div className="font-medium">{table.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Capacity: {table.capacity}
+                  </div>
+                  <Badge variant={table.occupied ? "default" : "outline"} className="mt-2">
+                    {table.occupied ? 'Occupied' : 'Available'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Orders</CardTitle>
+            <CardDescription>Orders currently in progress</CardDescription>
+          </CardHeader>
+          <CardContent className="h-96 overflow-auto">
+            <div className="space-y-2">
+              {ordersData?.recent?.map(order => (
+                <div key={order.id} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <div className="font-medium">Order #{order.id}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {order.table ? `Table ${order.table}` : 'Takeaway'} • {formatCurrency(order.amount)}
+                    </div>
+                  </div>
+                  <Badge variant={order.status === 'completed' ? 'default' : 'outline'}>
+                    {order.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common tasks for staff</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" className="h-auto py-4 flex flex-col space-y-2 items-center justify-center" 
+              onClick={() => window.location.href = '/pos'}>
+              <ShoppingCart className="h-5 w-5" />
+              <span>New Order</span>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex flex-col space-y-2 items-center justify-center"
+              onClick={() => window.location.href = '/tables'}>
+              <Coffee className="h-5 w-5" />
+              <span>Manage Tables</span>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex flex-col space-y-2 items-center justify-center"
+              onClick={() => window.location.href = '/shifts'}>
+              <Clock className="h-5 w-5" />
+              <span>My Shift</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Cashier Dashboard - Focused solely on processing orders
+const CashierDashboard = ({ ordersData }) => {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Orders</CardTitle>
+          <CardDescription>Orders ready for payment</CardDescription>
+        </CardHeader>
+        <CardContent className="h-96 overflow-auto">
+          <div className="space-y-2">
+            {ordersData?.recent?.map(order => (
+              <div key={order.id} className="flex items-center justify-between border-b pb-2">
+                <div>
+                  <div className="font-medium">Order #{order.id}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {order.table ? `Table ${order.table}` : 'Takeaway'} • {formatCurrency(order.amount)}
+                  </div>
+                </div>
+                <Badge variant={order.status === 'completed' ? 'default' : 'outline'}>
+                  {order.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common tasks for cashiers</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button variant="outline" className="h-auto py-4 flex flex-col space-y-2 items-center justify-center"
+              onClick={() => window.location.href = '/pos'}>
+              <ShoppingCart className="h-5 w-5" />
+              <span>New Order</span>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex flex-col space-y-2 items-center justify-center"
+              onClick={() => window.location.href = '/shifts'}>
+              <Clock className="h-5 w-5" />
+              <span>My Shift</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState("today");
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
   
   // Get date range based on selected time range
   const getDateRange = () => {
