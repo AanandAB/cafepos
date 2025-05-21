@@ -55,17 +55,33 @@ export default function Header() {
     });
   };
 
-  // Get active shift
-  const { data: activeShift } = useQuery({ 
+  // Get active shift - make sure we're getting the latest data
+  const { data: activeShift, refetch: refetchShift } = useQuery({ 
     queryKey: ['/api/shifts/user', user?.id],
     enabled: !!user,
   });
+  
+  // Refetch shifts data every minute to ensure accurate clock status
+  useEffect(() => {
+    if (user) {
+      const shiftTimer = setInterval(() => {
+        refetchShift();
+      }, 60000); // Check every minute
+      return () => clearInterval(shiftTimer);
+    }
+  }, [user, refetchShift]);
 
   // Clock in mutation
   const clockInMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/shifts/clock-in"),
     onSuccess: () => {
+      // Immediately refetch to update the button state
+      refetchShift();
+      
+      // Also invalidate all related queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['/api/shifts/user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      
       toast({
         title: "Clocked in",
         description: "You have successfully clocked in.",
@@ -84,7 +100,13 @@ export default function Header() {
   const clockOutMutation = useMutation({
     mutationFn: (shiftId: number) => apiRequest("POST", `/api/shifts/clock-out/${shiftId}`),
     onSuccess: () => {
+      // Immediately refetch to update the button state
+      refetchShift();
+      
+      // Also invalidate all related queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['/api/shifts/user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      
       toast({
         title: "Clocked out",
         description: "You have successfully clocked out.",
@@ -119,9 +141,13 @@ export default function Header() {
     }
   };
 
-  const hasActiveShift = activeShift && activeShift.some((shift: any) => !shift.clockOut);
-  const activeShiftId = hasActiveShift ? 
-    activeShift.find((shift: any) => !shift.clockOut).id : undefined;
+  // Properly check for active shifts and handle type safety
+  const hasActiveShift = Array.isArray(activeShift) && activeShift.length > 0 && 
+    activeShift.some((shift: any) => !shift.clockOut);
+    
+  // Get the ID of the active shift for clock-out functionality
+  const activeShiftId = hasActiveShift && Array.isArray(activeShift) ? 
+    activeShift.find((shift: any) => !shift.clockOut)?.id : undefined;
 
   return (
     <header className="bg-background border-b h-16 px-4 flex items-center justify-between">

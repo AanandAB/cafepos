@@ -58,7 +58,7 @@ export default function ShiftManagement() {
   });
 
   // Fetch current user's shift
-  const { data: userShift, isLoading: loadingUserShift } = useQuery({
+  const { data: userShift, isLoading: loadingUserShift, refetch: refetchUserShift } = useQuery({
     queryKey: ['/api/shifts/user'],
     queryFn: async () => {
       const response = await fetch('/api/shifts/user');
@@ -66,6 +66,15 @@ export default function ShiftManagement() {
       return response.json();
     }
   });
+  
+  // Refetch user shift data periodically to ensure UI always shows correct status
+  useEffect(() => {
+    const shiftRefreshTimer = setInterval(() => {
+      refetchUserShift();
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(shiftRefreshTimer);
+  }, [refetchUserShift]);
 
   // Clock in mutation
   const clockInMutation = useMutation({
@@ -83,12 +92,20 @@ export default function ShiftManagement() {
       return response.json();
     },
     onSuccess: () => {
+      // Immediately refresh to update the button state
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      
+      // Show success message
       toast({
         title: 'Success',
         description: 'You have successfully clocked in.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      
+      // Force an immediate refetch to ensure UI updates
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      }, 200);
     },
     onError: (error) => {
       toast({
@@ -115,13 +132,23 @@ export default function ShiftManagement() {
       return response.json();
     },
     onSuccess: () => {
+      // Close dialog first
+      setConfirmClockOutDialogOpen(false);
+      
+      // Immediately refresh to update the button state
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      
+      // Show success message
       toast({
         title: 'Success',
         description: 'You have successfully clocked out.',
       });
-      setConfirmClockOutDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      
+      // Force an immediate refetch to ensure UI updates
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/shifts/user'] });
+      }, 200);
     },
     onError: (error) => {
       toast({
