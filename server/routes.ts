@@ -1121,6 +1121,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0 // Initialize expenses, will be filled later
       })).sort((a, b) => a.date.localeCompare(b.date));
       
+      // Calculate total inventory expenses from the items
+      const totalInventoryExpense = inventoryItems
+        .filter(item => item.cost !== null && item.cost > 0)
+        .reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
+      
+      // Add inventory expenses to the total expenses
+      const dailyExpenseShare = totalInventoryExpense / salesTrend.length;
+          
       // Add expenses to each day in the sales trend
       if (allExpenses && allExpenses.length > 0) {
         const expensesByDate: Record<string, number> = {};
@@ -1134,9 +1142,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
-        // Add expenses to sales trend data
+        // For any date without expenses, distribute inventory costs evenly
         salesTrend.forEach(item => {
-          item.expenses = expensesByDate[item.date] || 0;
+          // If we have specific expenses for this date, use them
+          const regularExpense = expensesByDate[item.date] || 0;
+          
+          // Always add the proportional inventory expense
+          item.expenses = regularExpense + dailyExpenseShare;
+        });
+      } else {
+        // If no expense records exist, just distribute inventory costs
+        salesTrend.forEach(item => {
+          item.expenses = dailyExpenseShare;
         });
       }
       
