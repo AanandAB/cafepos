@@ -61,8 +61,10 @@ import {
   Database, 
   DownloadCloud, 
   UploadCloud,
-  Loader2
+  Loader2,
+  Cloud
 } from "lucide-react";
+import BackupRestore from "./components/BackupRestore";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
