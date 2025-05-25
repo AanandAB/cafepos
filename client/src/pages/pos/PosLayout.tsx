@@ -17,6 +17,7 @@ export type CartItem = {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  taxRate: number;
   notes?: string;
 };
 
@@ -80,7 +81,8 @@ export default function PosLayout() {
         name: menuItem.name,
         quantity: 1,
         unitPrice: menuItem.price,
-        totalPrice: menuItem.price
+        totalPrice: menuItem.price,
+        taxRate: menuItem.taxRate || 5 // Use item's tax rate or default to 5%
       };
       setCart([...cart, newItem]);
     }

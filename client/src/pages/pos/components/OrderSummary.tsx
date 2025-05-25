@@ -34,9 +34,20 @@ export default function OrderSummary({
     enabled: selectedTable !== null
   });
   
-  // Calculate totals
+  // Calculate totals with item-specific tax rates
   const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-  const { cgst, sgst, total } = gstCalculator(subtotal);
+  
+  // Calculate GST for each item based on its specific tax rate
+  const taxAmounts = cart.reduce((result, item) => {
+    const itemGst = gstCalculator(item.totalPrice, { rate: item.taxRate });
+    return {
+      cgst: result.cgst + itemGst.cgst,
+      sgst: result.sgst + itemGst.sgst,
+      igst: result.igst + itemGst.igst
+    };
+  }, { cgst: 0, sgst: 0, igst: 0 });
+  
+  const total = subtotal + taxAmounts.cgst + taxAmounts.sgst + taxAmounts.igst;
   
   return (
     <Card className="h-full flex flex-col">
@@ -124,12 +135,12 @@ export default function OrderSummary({
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>CGST (2.5%)</span>
-                <span>₹{cgst.toFixed(2)}</span>
+                <span>CGST</span>
+                <span>₹{taxAmounts.cgst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>SGST (2.5%)</span>
-                <span>₹{sgst.toFixed(2)}</span>
+                <span>SGST</span>
+                <span>₹{taxAmounts.sgst.toFixed(2)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">

@@ -48,7 +48,20 @@ export default function PaymentModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { subtotal, cgst, sgst, total: finalTotal } = gstCalculator(total);
+  // Calculate taxes based on individual item tax rates
+  const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+  
+  // Calculate GST for each item based on its specific tax rate
+  const taxAmounts = cart.reduce((result, item) => {
+    const itemGst = gstCalculator(item.totalPrice, { rate: item.taxRate });
+    return {
+      cgst: result.cgst + itemGst.cgst,
+      sgst: result.sgst + itemGst.sgst,
+      igst: result.igst + itemGst.igst
+    };
+  }, { cgst: 0, sgst: 0, igst: 0 });
+  
+  const finalTotal = subtotal + taxAmounts.cgst + taxAmounts.sgst + taxAmounts.igst;
   
   // Improved UPI payment check with automatic notification
   const checkUpiPaymentStatus = async () => {
