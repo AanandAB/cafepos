@@ -119,16 +119,19 @@ export default function BackupRestore() {
   // Handle Google Sign In
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
-      // Note: We don't set isGoogleSignedIn here because the redirect will happen
-      // and this code won't continue executing. The state will be updated in the
-      // useEffect after the redirect completes.
-      
-      // We do show a toast to let the user know they're being redirected
-      toast({
-        title: 'Redirecting to Google',
-        description: 'Please complete the sign-in process with Google.',
-      });
+      const user = await signInWithGoogle();
+      if (user) {
+        // Now we can set the state directly since we're using popup
+        setIsGoogleSignedIn(true);
+        toast({
+          title: 'Google Sign In Successful',
+          description: 'You can now backup and restore data using Google Drive.',
+        });
+        // Refresh the backups list
+        setTimeout(() => {
+          refetchBackups();
+        }, 1000);
+      }
     } catch (error) {
       console.error("Google Sign In error:", error);
       toast({
