@@ -319,6 +319,7 @@ export default function MenuItemInventory() {
                   <TableHead>Item Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>GST Rate</TableHead>
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -337,6 +338,13 @@ export default function MenuItemInventory() {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{getCategoryName(item.categoryId)}</TableCell>
                       <TableCell>₹{item.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {item.taxRate !== undefined ? (
+                          <Badge variant="outline">{item.taxRate}%</Badge>
+                        ) : (
+                          <Badge variant="outline">5%</Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{item.stockQuantity || 0}</TableCell>
                       <TableCell>
                         {(item.stockQuantity || 0) === 0 ? (
@@ -369,9 +377,9 @@ export default function MenuItemInventory() {
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Update Stock Quantity</DialogTitle>
+            <DialogTitle>Update Menu Item</DialogTitle>
             <DialogDescription>
-              {selectedItem && `Current stock for ${selectedItem.name}: ${selectedItem.stockQuantity || 0}`}
+              {selectedItem && `Update details for ${selectedItem.name}`}
             </DialogDescription>
           </DialogHeader>
           
@@ -382,7 +390,7 @@ export default function MenuItemInventory() {
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Stock Quantity</FormLabel>
+                    <FormLabel>Stock Quantity</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -393,6 +401,37 @@ export default function MenuItemInventory() {
                     </FormControl>
                     <FormDescription>
                       Enter the total available quantity after restocking.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={updateForm.control}
+                name="taxRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GST Rate (%)</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(Number(value))} 
+                      defaultValue={field.value?.toString() || "5"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select GST rate" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">0% (GST Exempt)</SelectItem>
+                        <SelectItem value="5">5% (Standard Food GST)</SelectItem>
+                        <SelectItem value="12">12% (Higher Food GST)</SelectItem>
+                        <SelectItem value="18">18% (Standard Service GST)</SelectItem>
+                        <SelectItem value="28">28% (Luxury GST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the appropriate GST rate for this item
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

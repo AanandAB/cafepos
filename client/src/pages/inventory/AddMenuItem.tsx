@@ -89,6 +89,7 @@ export default function AddMenuItem() {
           available: values.available,
           stockQuantity: Number(values.stockQuantity),
           vegetarian: values.vegetarian,
+          taxRate: Number(values.taxRate),
         })
       });
       
@@ -250,6 +251,37 @@ export default function AddMenuItem() {
                         {...field} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="taxRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GST Rate (%)</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(Number(value))} 
+                      defaultValue={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select GST rate" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">0% (GST Exempt)</SelectItem>
+                        <SelectItem value="5">5% (Standard Food GST)</SelectItem>
+                        <SelectItem value="12">12% (Higher Food GST)</SelectItem>
+                        <SelectItem value="18">18% (Standard Service GST)</SelectItem>
+                        <SelectItem value="28">28% (Luxury GST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the appropriate GST rate for this item as per Indian tax laws
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
