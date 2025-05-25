@@ -60,6 +60,7 @@ const stockUpdateSchema = z.object({
   itemId: z.number(),
   quantity: z.coerce.number().min(0, { message: 'Quantity must be a positive number' }),
   category: z.string(),
+  taxRate: z.coerce.number().min(0, { message: 'Tax rate must be a positive number' }).default(5),
 });
 
 type StockUpdateFormValues = z.infer<typeof stockUpdateSchema>;
@@ -97,7 +98,8 @@ export default function MenuItemInventory() {
     defaultValues: {
       itemId: 0,
       quantity: 0,
-      category: ''
+      category: '',
+      taxRate: 5
     }
   });
 
@@ -110,21 +112,22 @@ export default function MenuItemInventory() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          stockQuantity: Number(values.quantity)
+          stockQuantity: Number(values.quantity),
+          taxRate: Number(values.taxRate)
         })
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to update stock');
+        throw new Error(error.message || 'Failed to update item');
       }
       
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Stock updated",
-        description: "The inventory has been updated successfully.",
+        title: "Item updated",
+        description: "The menu item has been updated successfully.",
       });
       setIsUpdateDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/menu-items'] });
@@ -132,7 +135,7 @@ export default function MenuItemInventory() {
     onError: (error) => {
       toast({
         variant: "destructive",
-        title: "Failed to update stock",
+        title: "Failed to update menu item",
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     }
@@ -149,7 +152,8 @@ export default function MenuItemInventory() {
     updateForm.reset({
       itemId: item.id,
       quantity: item.stockQuantity || 0,
-      category: item.categoryId ? item.categoryId.toString() : ''
+      category: item.categoryId ? item.categoryId.toString() : '',
+      taxRate: item.taxRate || 5 // Use the item's custom tax rate or default to 5%
     });
     setIsUpdateDialogOpen(true);
   };

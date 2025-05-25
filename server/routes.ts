@@ -323,11 +323,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Simple validation for stock update
+      // Validate stock quantity
       if (req.body.stockQuantity !== undefined && typeof req.body.stockQuantity !== 'number') {
         return res.status(400).json({ 
           message: "Invalid request data", 
           errors: "Stock quantity must be a number" 
+        });
+      }
+      
+      // Validate tax rate
+      if (req.body.taxRate !== undefined && typeof req.body.taxRate !== 'number') {
+        return res.status(400).json({ 
+          message: "Invalid request data", 
+          errors: "Tax rate must be a number" 
         });
       }
       
@@ -336,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Menu item not found" });
       }
       
-      console.log(`API: Updating menu item ${id} stock to: ${req.body.stockQuantity}`);
+      console.log(`API: Updating menu item ${id} - Stock: ${req.body.stockQuantity}, Tax Rate: ${req.body.taxRate}`);
       
       const updatedMenuItem = await storage.updateMenuItem(id, req.body);
       
@@ -345,12 +353,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Explicitly log the result to help diagnose issues
-      console.log(`API: Menu item ${id} updated, new stock: ${updatedMenuItem.stockQuantity}`);
+      console.log(`API: Menu item ${id} updated, new stock: ${updatedMenuItem.stockQuantity}, tax rate: ${updatedMenuItem.taxRate}%`);
       
       res.json(updatedMenuItem);
     } catch (error) {
-      console.error("Error updating menu item stock:", error);
-      res.status(500).json({ message: "Failed to update stock" });
+      console.error("Error updating menu item:", error);
+      res.status(500).json({ message: "Failed to update menu item" });
     }
   });
   
