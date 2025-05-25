@@ -2,7 +2,8 @@ import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User as FirebaseUser
@@ -29,21 +30,37 @@ googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
 // Firebase authentication functions
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    // Using redirect method is better for embedded environments like Replit
+    // Display a message to the user with instructions
+    alert("You'll be redirected to Google to sign in. Please add this domain to your Firebase authorized domains list if you encounter an 'unauthorized domain' error.");
     
-    // Get Google access token for Google Drive API
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (credential) {
-      const token = credential.accessToken;
-      // Store the token for later use with Google Drive API
-      if (token) {
-        localStorage.setItem('google_drive_token', token);
-      }
-    }
-    
-    return result.user;
+    await signInWithRedirect(auth, googleProvider);
+    return null; // Control will transfer to the redirect
   } catch (error) {
     console.error("Error signing in with Google:", error);
+    throw error;
+  }
+};
+
+// Handle redirect result when returning from Google auth
+export const handleGoogleRedirect = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      // Get Google access token for Google Drive API
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential) {
+        const token = credential.accessToken;
+        // Store the token for later use with Google Drive API
+        if (token) {
+          localStorage.setItem('google_drive_token', token);
+        }
+      }
+      return result.user;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error handling Google redirect:", error);
     throw error;
   }
 };

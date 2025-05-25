@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithGoogle, signOut } from '@/lib/firebase';
+import { signInWithGoogle, handleGoogleRedirect, signOut } from '@/lib/firebase';
 import { backupToDrive, fetchBackupsFromDrive, restoreFromDrive, hasValidGoogleDriveToken } from '@/lib/googleDriveService';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -21,10 +21,35 @@ export default function BackupRestore() {
   const { toast } = useToast();
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState(false);
 
-  // Check if user has a valid Google Drive token
+  // Check if user has a valid Google Drive token and handle redirect
   useEffect(() => {
-    setIsGoogleSignedIn(hasValidGoogleDriveToken());
-  }, []);
+    const checkGoogleAuth = async () => {
+      // Check if coming back from a Google redirect
+      try {
+        const user = await handleGoogleRedirect();
+        if (user) {
+          setIsGoogleSignedIn(true);
+          toast({
+            title: "Google Sign In Successful",
+            description: "You can now backup and restore data using Google Drive.",
+          });
+          refetchBackups();
+        } else {
+          // Check if we have a valid token already
+          setIsGoogleSignedIn(hasValidGoogleDriveToken());
+        }
+      } catch (error) {
+        console.error("Error handling Google redirect:", error);
+        toast({
+          variant: "destructive",
+          title: "Google Sign In Failed",
+          description: error instanceof Error ? error.message : "An unknown error occurred",
+        });
+      }
+    };
+    
+    checkGoogleAuth();
+  }, [toast]);
 
   // Fetch backups from Google Drive
   const { 
@@ -160,6 +185,21 @@ export default function BackupRestore() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Firebase Domain Setup Instructions */}
+        <div className="bg-amber-50 p-4 rounded-md mb-4 border border-amber-200">
+          <h3 className="text-sm font-medium text-amber-800 mb-2">Firebase Setup Required</h3>
+          <p className="text-xs text-amber-700 mb-2">
+            Before using Google login, you must add this Replit domain to your Firebase project:
+          </p>
+          <ol className="text-xs text-amber-700 list-decimal pl-5 space-y-1">
+            <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Firebase Console</a></li>
+            <li>Select your project</li>
+            <li>Go to Authentication → Settings → Authorized domains</li>
+            <li>Add this domain: <code className="bg-amber-100 px-1 py-0.5 rounded">{window.location.hostname}</code></li>
+            <li>Click "Add domain"</li>
+          </ol>
+        </div>
+
         {/* Google Sign In/Out Section */}
         <div className="mb-6">
           {!isGoogleSignedIn ? (

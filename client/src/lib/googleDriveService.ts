@@ -9,6 +9,21 @@ export const hasValidGoogleDriveToken = (): boolean => {
   return !!token;
 };
 
+// Helper function to handle auth errors more gracefully
+const handleAuthErrors = (error: any): void => {
+  if (error && error.status === 401) {
+    // Token expired or invalid, clear it
+    localStorage.removeItem('google_drive_token');
+    throw new Error('Your Google Drive session has expired. Please sign in again.');
+  }
+  
+  if (error && error.message && error.message.includes('authorized')) {
+    throw new Error('Firebase authentication failed. Please ensure you have added your domain to the authorized domains list in Firebase console.');
+  }
+  
+  throw error;
+};
+
 // Function to backup data to Google Drive
 export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_backup.json'): Promise<boolean> => {
   try {
