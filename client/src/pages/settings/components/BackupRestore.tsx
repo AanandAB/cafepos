@@ -211,18 +211,28 @@ export default function BackupRestore() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Firebase Domain Setup Instructions */}
+        {/* Firebase and Google Drive Setup Instructions */}
         <div className="bg-amber-50 p-4 rounded-md mb-4 border border-amber-200">
-          <h3 className="text-sm font-medium text-amber-800 mb-2">Firebase Setup Required</h3>
+          <h3 className="text-sm font-medium text-amber-800 mb-2">Setup Required</h3>
           <p className="text-xs text-amber-700 mb-2">
-            Before using Google login, you must add this Replit domain to your Firebase project:
+            To use Google login and backup features, please complete these two steps:
           </p>
+          
+          <h4 className="text-xs text-amber-800 font-medium mt-3 mb-1">1. Add this domain to Firebase:</h4>
           <ol className="text-xs text-amber-700 list-decimal pl-5 space-y-1">
             <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Firebase Console</a></li>
             <li>Select your project</li>
             <li>Go to Authentication → Settings → Authorized domains</li>
             <li>Add this domain: <code className="bg-amber-100 px-1 py-0.5 rounded">{window.location.hostname}</code></li>
             <li>Click "Add domain"</li>
+          </ol>
+          
+          <h4 className="text-xs text-amber-800 font-medium mt-3 mb-1">2. Enable Google Drive API:</h4>
+          <ol className="text-xs text-amber-700 list-decimal pl-5 space-y-1">
+            <li>Go to the <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console</a></li>
+            <li>Make sure your project is selected (same as Firebase project)</li>
+            <li>Click "Enable" to enable the Google Drive API</li>
+            <li>Wait 5-10 minutes for changes to propagate after enabling</li>
           </ol>
         </div>
 
