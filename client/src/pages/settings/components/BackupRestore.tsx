@@ -28,15 +28,34 @@ export default function BackupRestore() {
       try {
         const user = await handleGoogleRedirect();
         if (user) {
-          setIsGoogleSignedIn(true);
-          toast({
-            title: "Google Sign In Successful",
-            description: "You can now backup and restore data using Google Drive.",
-          });
-          refetchBackups();
+          console.log("Google authentication successful:", user);
+          // Force token check after successful redirect
+          const hasToken = hasValidGoogleDriveToken();
+          console.log("Has valid Google Drive token:", hasToken);
+          
+          setIsGoogleSignedIn(hasToken);
+          
+          if (hasToken) {
+            toast({
+              title: "Google Sign In Successful",
+              description: "You can now backup and restore data using Google Drive.",
+            });
+            // Force refresh of backups list
+            setTimeout(() => {
+              refetchBackups();
+            }, 1000);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Google Drive Access Failed",
+              description: "Authentication succeeded but Drive access was not granted. Please try again and ensure you grant all requested permissions.",
+            });
+          }
         } else {
           // Check if we have a valid token already
-          setIsGoogleSignedIn(hasValidGoogleDriveToken());
+          const hasToken = hasValidGoogleDriveToken();
+          console.log("Checking existing token. Has valid token:", hasToken);
+          setIsGoogleSignedIn(hasToken);
         }
       } catch (error) {
         console.error("Error handling Google redirect:", error);
@@ -101,13 +120,17 @@ export default function BackupRestore() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      setIsGoogleSignedIn(true);
+      // Note: We don't set isGoogleSignedIn here because the redirect will happen
+      // and this code won't continue executing. The state will be updated in the
+      // useEffect after the redirect completes.
+      
+      // We do show a toast to let the user know they're being redirected
       toast({
-        title: 'Google Sign In Successful',
-        description: 'You can now backup and restore data using Google Drive.',
+        title: 'Redirecting to Google',
+        description: 'Please complete the sign-in process with Google.',
       });
-      refetchBackups();
     } catch (error) {
+      console.error("Google Sign In error:", error);
       toast({
         variant: 'destructive',
         title: 'Google Sign In Failed',
