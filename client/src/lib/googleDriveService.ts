@@ -32,6 +32,8 @@ export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_back
       throw new Error('No Google Drive access token found. Please sign in with Google first.');
     }
 
+    console.log("Starting Google Drive backup with token:", token.substring(0, 10) + "...");
+
     // Create a file metadata object
     const metadata = {
       name: fileName,
@@ -41,26 +43,73 @@ export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_back
     // Create the file content as a Blob
     const contentBlob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
 
-    // Create a FormData object to upload the file
-    const formData = new FormData();
-    formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    formData.append('file', contentBlob);
+    // Try a different approach for uploading
+    try {
+      // First create an empty file to get an ID
+      const createResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(metadata),
+      });
 
-    // Upload the file to Google Drive
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json();
+        console.error("Failed to create file:", errorData);
+        throw new Error(`Failed to create file: ${errorData.error?.message || 'Unknown error'}`);
+      }
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Failed to upload backup: ${errorData.error?.message || 'Unknown error'}`);
+      const { id } = await createResponse.json();
+      console.log("File created with ID:", id);
+
+      // Then upload the content to that file
+      const uploadResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        console.error("Failed to upload content:", errorData);
+        throw new Error(`Failed to upload content: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      console.log("Backup completed successfully");
+      return true;
+    } catch (uploadError) {
+      console.error("Error with two-step upload:", uploadError);
+      
+      // Fall back to the multipart upload method if two-step fails
+      console.log("Trying multipart upload as fallback...");
+      
+      // Create a FormData object to upload the file
+      const formData = new FormData();
+      formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      formData.append('file', contentBlob);
+
+      // Upload the file to Google Drive
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to upload backup: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      console.log("Fallback multipart upload successful");
+      return true;
     }
-
-    return true;
   } catch (error) {
     console.error('Error backing up to Google Drive:', error);
     throw error;

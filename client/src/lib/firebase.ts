@@ -25,6 +25,11 @@ const googleProvider = new GoogleAuthProvider();
 // Add scopes for Google Drive API access
 googleProvider.addScope('https://www.googleapis.com/auth/drive.file');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
+googleProvider.addScope('https://www.googleapis.com/auth/drive');
+googleProvider.setCustomParameters({
+  prompt: 'consent',
+  access_type: 'offline'
+});
 
 // Firebase authentication functions
 export const signInWithGoogle = async () => {
@@ -40,11 +45,24 @@ export const signInWithGoogle = async () => {
       if (token) {
         localStorage.setItem('google_drive_token', token);
         console.log("Google Drive token stored successfully");
+        
+        // Store token expiry time (typically 1 hour from now)
+        const expiryTime = Date.now() + (60 * 60 * 1000);
+        localStorage.setItem('google_drive_token_expiry', expiryTime.toString());
+        
+        // Also store the ID token as it might be needed for some operations
+        if (result.user) {
+          result.user.getIdToken().then(idToken => {
+            localStorage.setItem('google_id_token', idToken);
+          });
+        }
       } else {
         console.warn("No access token received from Google");
+        alert("Failed to get access token from Google. Please ensure you grant all requested permissions.");
       }
     } else {
       console.warn("No credential received from Google");
+      alert("Failed to get credentials from Google. Please try again and ensure you grant all requested permissions.");
     }
     
     return result.user;
@@ -53,6 +71,9 @@ export const signInWithGoogle = async () => {
     // Check if the error is related to unauthorized domain
     if (error instanceof Error && error.message.includes("auth/unauthorized-domain")) {
       alert("This domain is not authorized in your Firebase project. Please add it to the authorized domains list in Firebase console.");
+    } else {
+      // Show a more user-friendly error message
+      alert("Google sign in failed: " + (error instanceof Error ? error.message : "Unknown error"));
     }
     throw error;
   }

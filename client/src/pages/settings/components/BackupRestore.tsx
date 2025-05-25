@@ -171,19 +171,55 @@ export default function BackupRestore() {
       return;
     }
 
+    // Show loading toast
+    toast({
+      title: 'Creating Backup',
+      description: 'Uploading data to Google Drive...',
+    });
+
     try {
+      // Check token expiry
+      const expiryTime = localStorage.getItem('google_drive_token_expiry');
+      const isExpired = expiryTime && parseInt(expiryTime) < Date.now();
+      
+      if (isExpired) {
+        toast({
+          variant: 'destructive',
+          title: 'Token Expired',
+          description: 'Your Google authentication has expired. Please sign in again.',
+        });
+        // Sign out and clear tokens
+        await signOut();
+        setIsGoogleSignedIn(false);
+        return;
+      }
+
       const fileName = `cafe_pos_backup_${new Date().toISOString().split('T')[0]}.json`;
       await backupToDrive(databaseData, fileName);
+      
       toast({
         title: 'Backup Successful',
         description: 'Your data has been backed up to Google Drive.',
       });
-      refetchBackups();
+      
+      // Refresh the backups list
+      setTimeout(() => {
+        refetchBackups();
+      }, 1000);
     } catch (error) {
+      console.error("Backup error details:", error);
+      
+      // Handle specific error cases
+      let errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      
+      if (errorMessage.includes('authentication') || errorMessage.includes('credentials')) {
+        errorMessage = 'Authentication failed. Please sign out and sign in again with Google, ensuring you grant all requested permissions.';
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Backup Failed',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        description: errorMessage,
       });
     }
   };
