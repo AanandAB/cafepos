@@ -40,6 +40,7 @@ const menuItemSchema = z.object({
   available: z.boolean().default(true),
   stockQuantity: z.coerce.number().min(0, { message: 'Stock quantity must be a positive number' }),
   vegetarian: z.boolean().default(false),
+  taxRate: z.coerce.number().min(0, { message: 'Tax rate must be a positive number' }).default(5),
 });
 
 type MenuItemFormValues = z.infer<typeof menuItemSchema>;
@@ -68,6 +69,7 @@ export default function AddMenuItem() {
       available: true,
       stockQuantity: 0,
       vegetarian: false,
+      taxRate: 5, // Default GST rate of 5%
     }
   });
 
