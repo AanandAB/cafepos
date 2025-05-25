@@ -54,13 +54,22 @@ export const handleGoogleRedirect = async () => {
         // Store the token for later use with Google Drive API
         if (token) {
           localStorage.setItem('google_drive_token', token);
+          console.log("Google Drive token stored successfully");
+        } else {
+          console.warn("No access token received from Google");
         }
+      } else {
+        console.warn("No credential received from Google");
       }
       return result.user;
     }
     return null;
   } catch (error) {
     console.error("Error handling Google redirect:", error);
+    // Check if the error is related to unauthorized domain
+    if (error instanceof Error && error.message.includes("auth/unauthorized-domain")) {
+      alert("This domain is not authorized in your Firebase project. Please add it to the authorized domains list in Firebase console.");
+    }
     throw error;
   }
 };
