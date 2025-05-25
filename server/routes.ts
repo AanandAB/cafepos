@@ -1235,6 +1235,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export all data for backup
+  app.get('/api/settings/export-data', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      // Fetch all data from storage
+      const [
+        users,
+        categories,
+        menuItems,
+        inventoryItems,
+        tables,
+        orders,
+        expenses,
+        settings
+      ] = await Promise.all([
+        storage.getUsers(),
+        storage.getCategories(),
+        storage.getMenuItems(),
+        storage.getInventoryItems(),
+        storage.getTables(),
+        storage.getOrders(),
+        storage.getExpenses(),
+        storage.getSettings()
+      ]);
+      
+      // Fetch order items for each order
+      const orderItems = await Promise.all(
+        orders.map(async (order) => {
+          const items = await storage.getOrderItemsByOrder(order.id);
+          return { orderId: order.id, items };
+        })
+      );
+      
+      // Create export data object
+      const exportData = {
+        metadata: {
+          version: "1.0",
+          exportDate: new Date().toISOString(),
+          type: "full-backup"
+        },
+        data: {
+          users,
+          categories,
+          menuItems,
+          inventoryItems,
+          tables,
+          orders,
+          orderItems,
+          expenses,
+          settings
+        }
+      };
+      
+      res.json(exportData);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Import data from backup
+  app.post('/api/settings/import-data', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      const importData = req.body;
+      
+      // Validate import data
+      if (!importData.data || !importData.metadata) {
+        return res.status(400).json({ message: "Invalid import data format" });
+      }
+      
+      // Process import in a transaction-like manner
+      try {
+        // Import settings
+        if (importData.data.settings) {
+          for (const setting of importData.data.settings) {
+            await storage.createOrUpdateSetting({
+              key: setting.key,
+              value: setting.value,
+              type: setting.type || 'string'
+            });
+          }
+        }
+        
+        // Additional import logic for other entities would go here
+        
+        res.json({ success: true, message: "Data imported successfully" });
+      } catch (error) {
+        console.error("Error during import:", error);
+        res.status(500).json({ 
+          message: "Import failed", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -350,9 +350,10 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="backup" className="space-y-4">
+          {/* Local Backup & Restore */}
           <Card>
             <CardHeader>
-              <CardTitle>Backup & Restore</CardTitle>
+              <CardTitle>Local Backup & Restore</CardTitle>
               <CardDescription>
                 Export your data for backup or import previously exported data
               </CardDescription>
@@ -386,6 +387,9 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Google Drive Backup & Restore */}
+          <BackupRestore />
           
           <Card>
             <CardHeader>
