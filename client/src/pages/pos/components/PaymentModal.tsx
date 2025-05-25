@@ -233,12 +233,13 @@ export default function PaymentModal({
               name: item.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice
+              totalPrice: item.totalPrice,
+              taxRate: item.taxRate
             }))
           },
           subtotal,
-          cgst,
-          sgst,
+          cgst: taxAmounts.cgst,
+          sgst: taxAmounts.sgst,
           total: finalTotal,
           paymentMethod
         });
@@ -297,12 +298,12 @@ export default function PaymentModal({
                   <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>CGST (2.5%):</span>
-                  <span>₹{cgst.toFixed(2)}</span>
+                  <span>CGST:</span>
+                  <span>₹{taxAmounts.cgst.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>SGST (2.5%):</span>
-                  <span>₹{sgst.toFixed(2)}</span>
+                  <span>SGST:</span>
+                  <span>₹{taxAmounts.sgst.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold">

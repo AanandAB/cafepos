@@ -416,7 +416,7 @@ export default function MenuItemInventory() {
                 name="taxRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>GST Rate (%)</FormLabel>
+                    <FormLabel>Tax Rate (%)</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(Number(value))} 
                       defaultValue={field.value?.toString() || "5"}
@@ -447,7 +447,7 @@ export default function MenuItemInventory() {
                   type="submit" 
                   disabled={updateStockMutation.isPending}
                 >
-                  {updateStockMutation.isPending ? 'Updating...' : 'Update Stock'}
+                  {updateStockMutation.isPending ? 'Updating...' : 'Update Item'}
                 </Button>
               </DialogFooter>
             </form>
