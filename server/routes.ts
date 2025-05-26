@@ -1412,45 +1412,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'menu-items':
           const menuItems = await storage.getMenuItems();
           csvContent = 'ID,Name,Description,Price,Category ID,Tax Rate,Available,Stock Quantity\n';
-          csvContent += menuItems.map(item => 
-            `${item.id},"${item.name}","${item.description || ''}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`
-          ).join('\n');
+          csvContent += menuItems.map(item => {
+            const name = (item.name || '').replace(/"/g, '""');
+            const description = (item.description || '').replace(/"/g, '""');
+            return `${item.id},"${name}","${description}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`;
+          }).join('\n');
           filename = 'menu-items.csv';
           break;
 
         case 'inventory':
           const inventoryItems = await storage.getInventoryItems();
           csvContent = 'ID,Name,Quantity,Unit,Alert Threshold,Cost\n';
-          csvContent += inventoryItems.map(item => 
-            `${item.id},"${item.name}",${item.quantity},"${item.unit}",${item.alertThreshold},${item.cost || 0}`
-          ).join('\n');
+          csvContent += inventoryItems.map(item => {
+            const name = (item.name || '').replace(/"/g, '""');
+            const unit = (item.unit || '').replace(/"/g, '""');
+            return `${item.id},"${name}",${item.quantity},"${unit}",${item.alertThreshold},${item.cost || 0}`;
+          }).join('\n');
           filename = 'inventory-items.csv';
           break;
 
         case 'categories':
           const categories = await storage.getCategories();
           csvContent = 'ID,Name,Description\n';
-          csvContent += categories.map(cat => 
-            `${cat.id},"${cat.name}","${cat.description || ''}"`
-          ).join('\n');
+          csvContent += categories.map(cat => {
+            const name = (cat.name || '').replace(/"/g, '""');
+            const description = (cat.description || '').replace(/"/g, '""');
+            return `${cat.id},"${name}","${description}"`;
+          }).join('\n');
           filename = 'categories.csv';
           break;
 
         case 'tables':
           const tables = await storage.getTables();
           csvContent = 'ID,Name,Capacity,Occupied\n';
-          csvContent += tables.map(table => 
-            `${table.id},"${table.name}",${table.capacity},${table.occupied}`
-          ).join('\n');
+          csvContent += tables.map(table => {
+            const name = (table.name || '').replace(/"/g, '""');
+            return `${table.id},"${name}",${table.capacity},${table.occupied}`;
+          }).join('\n');
           filename = 'tables.csv';
           break;
 
         case 'expenses':
           const expenses = await storage.getExpenses();
           csvContent = 'ID,Description,Amount,Category,Date,Notes\n';
-          csvContent += expenses.map(expense => 
-            `${expense.id},"${expense.description}",${expense.amount},"${expense.category}","${new Date(expense.date).toISOString()}","${expense.notes || ''}"`
-          ).join('\n');
+          csvContent += expenses.map(expense => {
+            const description = (expense.description || '').replace(/"/g, '""');
+            const category = (expense.category || '').replace(/"/g, '""');
+            const notes = (expense.notes || '').replace(/"/g, '""');
+            return `${expense.id},"${description}",${expense.amount},"${category}","${new Date(expense.date).toISOString()}","${notes}"`;
+          }).join('\n');
           filename = 'expenses.csv';
           break;
 
@@ -1464,33 +1474,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           csvContent = '=== CATEGORIES ===\n';
           csvContent += 'ID,Name,Description\n';
-          csvContent += allCategories.map(cat => 
-            `${cat.id},"${cat.name}","${cat.description || ''}"`
-          ).join('\n');
+          csvContent += allCategories.map(cat => {
+            const name = (cat.name || '').replace(/"/g, '""');
+            const description = (cat.description || '').replace(/"/g, '""');
+            return `${cat.id},"${name}","${description}"`;
+          }).join('\n');
           
           csvContent += '\n\n=== MENU ITEMS ===\n';
           csvContent += 'ID,Name,Description,Price,Category ID,Tax Rate,Available,Stock Quantity\n';
-          csvContent += allMenuItems.map(item => 
-            `${item.id},"${item.name}","${item.description || ''}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`
-          ).join('\n');
+          csvContent += allMenuItems.map(item => {
+            const name = (item.name || '').replace(/"/g, '""');
+            const description = (item.description || '').replace(/"/g, '""');
+            return `${item.id},"${name}","${description}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`;
+          }).join('\n');
           
           csvContent += '\n\n=== INVENTORY ===\n';
           csvContent += 'ID,Name,Quantity,Unit,Alert Threshold,Cost\n';
-          csvContent += allInventoryItems.map(item => 
-            `${item.id},"${item.name}",${item.quantity},"${item.unit}",${item.alertThreshold},${item.cost || 0}`
-          ).join('\n');
+          csvContent += allInventoryItems.map(item => {
+            const name = (item.name || '').replace(/"/g, '""');
+            const unit = (item.unit || '').replace(/"/g, '""');
+            return `${item.id},"${name}",${item.quantity},"${unit}",${item.alertThreshold},${item.cost || 0}`;
+          }).join('\n');
           
           csvContent += '\n\n=== TABLES ===\n';
           csvContent += 'ID,Name,Capacity,Occupied\n';
-          csvContent += allTables.map(table => 
-            `${table.id},"${table.name}",${table.capacity},${table.occupied}`
-          ).join('\n');
+          csvContent += allTables.map(table => {
+            const name = (table.name || '').replace(/"/g, '""');
+            return `${table.id},"${name}",${table.capacity},${table.occupied}`;
+          }).join('\n');
           
           csvContent += '\n\n=== EXPENSES ===\n';
           csvContent += 'ID,Description,Amount,Category,Date,Notes\n';
-          csvContent += allExpenses.map(expense => 
-            `${expense.id},"${expense.description}",${expense.amount},"${expense.category}","${new Date(expense.date).toISOString()}","${expense.notes || ''}"`
-          ).join('\n');
+          csvContent += allExpenses.map(expense => {
+            const description = (expense.description || '').replace(/"/g, '""');
+            const category = (expense.category || '').replace(/"/g, '""');
+            const notes = (expense.notes || '').replace(/"/g, '""');
+            return `${expense.id},"${description}",${expense.amount},"${category}","${new Date(expense.date).toISOString()}","${notes}"`;
+          }).join('\n');
           
           filename = 'cafe-pos-complete-backup.csv';
           break;
@@ -1516,8 +1536,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'CSV data is required' });
       }
 
-      // Parse the multi-section CSV backup data
-      const sections = csvData.split('=== ').filter((section: string) => section.trim());
+      // Helper function to parse CSV line properly
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        let i = 0;
+        
+        while (i < line.length) {
+          const char = line[i];
+          
+          if (char === '"' && (i === 0 || line[i-1] === ',')) {
+            inQuotes = true;
+          } else if (char === '"' && inQuotes && (i === line.length - 1 || line[i+1] === ',')) {
+            inQuotes = false;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+          i++;
+        }
+        
+        result.push(current.trim());
+        return result;
+      };
+
       let importedCounts = {
         categories: 0,
         menuItems: 0,
@@ -1526,90 +1571,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0
       };
 
-      for (const section of sections) {
-        const lines = section.split('\n').filter((line: string) => line.trim());
-        if (lines.length < 2) continue;
+      // Find each section by looking for specific patterns
+      const categoryMatch = csvData.match(/=== CATEGORIES ===\n([\s\S]*?)(?=\n\n=== |$)/);
+      const menuItemMatch = csvData.match(/=== MENU ITEMS ===\n([\s\S]*?)(?=\n\n=== |$)/);
+      const inventoryMatch = csvData.match(/=== INVENTORY ===\n([\s\S]*?)(?=\n\n=== |$)/);
+      const tableMatch = csvData.match(/=== TABLES ===\n([\s\S]*?)(?=\n\n=== |$)/);
+      const expenseMatch = csvData.match(/=== EXPENSES ===\n([\s\S]*?)(?=\n\n=== |$)/);
 
-        const sectionType = lines[0].replace('===', '').trim();
-        const dataLines = lines.slice(2); // Skip header line
-
-        switch (sectionType) {
-          case 'CATEGORIES':
-            for (const line of dataLines) {
-              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
-              if (values.length >= 2) {
-                await storage.createCategory({
-                  name: values[1],
-                  description: values[2] || ''
-                });
-                importedCounts.categories++;
-              }
+      // Process categories
+      if (categoryMatch) {
+        const lines = categoryMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 2 && values[1]) {
+              await storage.createCategory({
+                name: values[1],
+                description: values[2] || ''
+              });
+              importedCounts.categories++;
             }
-            break;
+          } catch (error) {
+            console.log('Skipping invalid category line:', line);
+          }
+        }
+      }
 
-          case 'MENU ITEMS':
-            for (const line of dataLines) {
-              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
-              if (values.length >= 6) {
-                await storage.createMenuItem({
-                  name: values[1],
-                  description: values[2] || '',
-                  price: parseFloat(values[3]) || 0,
-                  categoryId: parseInt(values[4]) || 1,
-                  taxRate: parseFloat(values[5]) || 0,
-                  available: values[6] === 'true',
-                  stockQuantity: parseInt(values[7]) || 0
-                });
-                importedCounts.menuItems++;
-              }
+      // Process menu items
+      if (menuItemMatch) {
+        const lines = menuItemMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 6 && values[1]) {
+              await storage.createMenuItem({
+                name: values[1],
+                description: values[2] || '',
+                price: parseFloat(values[3]) || 0,
+                categoryId: parseInt(values[4]) || 1,
+                taxRate: parseFloat(values[5]) || 0,
+                available: values[6] === 'true',
+                stockQuantity: parseInt(values[7]) || 0
+              });
+              importedCounts.menuItems++;
             }
-            break;
+          } catch (error) {
+            console.log('Skipping invalid menu item line:', line);
+          }
+        }
+      }
 
-          case 'INVENTORY':
-            for (const line of dataLines) {
-              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
-              if (values.length >= 4) {
-                await storage.createInventoryItem({
-                  name: values[1],
-                  quantity: parseFloat(values[2]) || 0,
-                  unit: values[3],
-                  alertThreshold: parseFloat(values[4]) || 0,
-                  cost: parseFloat(values[5]) || 0
-                });
-                importedCounts.inventory++;
-              }
+      // Process inventory
+      if (inventoryMatch) {
+        const lines = inventoryMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 4 && values[1]) {
+              await storage.createInventoryItem({
+                name: values[1],
+                quantity: parseFloat(values[2]) || 0,
+                unit: values[3] || 'units',
+                alertThreshold: parseFloat(values[4]) || 0,
+                cost: parseFloat(values[5]) || 0
+              });
+              importedCounts.inventory++;
             }
-            break;
+          } catch (error) {
+            console.log('Skipping invalid inventory line:', line);
+          }
+        }
+      }
 
-          case 'TABLES':
-            for (const line of dataLines) {
-              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
-              if (values.length >= 3) {
-                await storage.createTable({
-                  name: values[1],
-                  capacity: parseInt(values[2]) || 2,
-                  occupied: values[3] === 'true'
-                });
-                importedCounts.tables++;
-              }
+      // Process tables
+      if (tableMatch) {
+        const lines = tableMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 3 && values[1]) {
+              await storage.createTable({
+                name: values[1],
+                capacity: parseInt(values[2]) || 2,
+                occupied: values[3] === 'true'
+              });
+              importedCounts.tables++;
             }
-            break;
+          } catch (error) {
+            console.log('Skipping invalid table line:', line);
+          }
+        }
+      }
 
-          case 'EXPENSES':
-            for (const line of dataLines) {
-              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
-              if (values.length >= 4) {
-                await storage.createExpense({
-                  description: values[1],
-                  amount: parseFloat(values[2]) || 0,
-                  category: values[3] as any,
-                  date: new Date(values[4]) || new Date(),
-                  notes: values[5] || ''
-                });
-                importedCounts.expenses++;
-              }
+      // Process expenses
+      if (expenseMatch) {
+        const lines = expenseMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Description'));
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 4 && values[1]) {
+              await storage.createExpense({
+                description: values[1],
+                amount: parseFloat(values[2]) || 0,
+                category: values[3] as any,
+                date: new Date(values[4]) || new Date(),
+                notes: values[5] || ''
+              });
+              importedCounts.expenses++;
             }
-            break;
+          } catch (error) {
+            console.log('Skipping invalid expense line:', line);
+          }
         }
       }
 
