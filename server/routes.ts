@@ -1595,17 +1595,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 2 && values[1]) {
-              // Check if category with same name exists
+              console.log('Processing category:', values);
+              
+              // Check if category with same name exists (case-insensitive)
               const existingCategories = await storage.getCategories();
-              const existing = existingCategories.find(cat => cat.name === values[1]);
+              const existing = existingCategories.find(cat => cat.name.toLowerCase() === values[1].toLowerCase());
               
               if (existing) {
-                // Update existing category
+                console.log(`Updating existing category: ${values[1]}`);
                 await storage.updateCategory(existing.id, {
                   description: values[2] || ''
                 });
               } else {
-                // Create new category
+                console.log(`Creating new category: ${values[1]}`);
                 await storage.createCategory({
                   name: values[1],
                   description: values[2] || ''
@@ -1625,10 +1627,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
-            if (values.length >= 6 && values[1]) {
+            if (values.length >= 7 && values[1]) {
+              console.log('Processing menu item:', values);
+              
               // Check if menu item with same name exists
               const existingMenuItems = await storage.getMenuItems();
-              const existing = existingMenuItems.find(item => item.name === values[1]);
+              const existing = existingMenuItems.find(item => item.name.toLowerCase() === values[1].toLowerCase());
               
               const menuItemData = {
                 name: values[1],
@@ -1641,10 +1645,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
               
               if (existing) {
-                // Update existing menu item
+                console.log(`Updating existing menu item: ${values[1]}`);
                 await storage.updateMenuItem(existing.id, menuItemData);
               } else {
-                // Create new menu item
+                console.log(`Creating new menu item: ${values[1]}`);
                 await storage.createMenuItem(menuItemData);
               }
               importedCounts.menuItems++;
@@ -1662,9 +1666,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 4 && values[1]) {
-              // Check if inventory item with same name exists
+              console.log('Processing inventory item:', values);
+              
+              // Check if inventory item with same name exists (case-insensitive)
               const existingInventoryItems = await storage.getInventoryItems();
-              const existing = existingInventoryItems.find(item => item.name === values[1]);
+              const existing = existingInventoryItems.find(item => item.name.toLowerCase() === values[1].toLowerCase());
               
               const inventoryData = {
                 name: values[1],
@@ -1675,10 +1681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
               
               if (existing) {
-                // Update existing inventory item
+                console.log(`Updating existing inventory item: ${values[1]}`);
                 await storage.updateInventoryItem(existing.id, inventoryData);
               } else {
-                // Create new inventory item
+                console.log(`Creating new inventory item: ${values[1]}`);
                 await storage.createInventoryItem(inventoryData);
               }
               importedCounts.inventory++;
@@ -1696,9 +1702,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 3 && values[1]) {
-              // Check if table with same name exists
+              console.log('Processing table:', values);
+              
+              // Check if table with same name exists (case-insensitive)
               const existingTables = await storage.getTables();
-              const existing = existingTables.find(table => table.name === values[1]);
+              const existing = existingTables.find(table => table.name.toLowerCase() === values[1].toLowerCase());
               
               const tableData = {
                 name: values[1],
@@ -1707,10 +1715,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
               
               if (existing) {
-                // Update existing table
+                console.log(`Updating existing table: ${values[1]}`);
                 await storage.updateTable(existing.id, tableData);
               } else {
-                // Create new table
+                console.log(`Creating new table: ${values[1]}`);
                 await storage.createTable(tableData);
               }
               importedCounts.tables++;
