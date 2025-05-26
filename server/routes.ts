@@ -1472,7 +1472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const allTables = await storage.getTables();
           const allExpenses = await storage.getExpenses();
           
-          csvContent = '=== CATEGORIES ===\n';
+          csvContent = 'CATEGORIES\n';
           csvContent += 'ID,Name,Description\n';
           csvContent += allCategories.map(cat => {
             const name = (cat.name || '').replace(/"/g, '""');
@@ -1480,7 +1480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return `${cat.id},"${name}","${description}"`;
           }).join('\n');
           
-          csvContent += '\n\n=== MENU ITEMS ===\n';
+          csvContent += '\n\nMENU ITEMS\n';
           csvContent += 'ID,Name,Description,Price,Category ID,Tax Rate,Available,Stock Quantity\n';
           csvContent += allMenuItems.map(item => {
             const name = (item.name || '').replace(/"/g, '""');
@@ -1488,7 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return `${item.id},"${name}","${description}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`;
           }).join('\n');
           
-          csvContent += '\n\n=== INVENTORY ===\n';
+          csvContent += '\n\nINVENTORY\n';
           csvContent += 'ID,Name,Quantity,Unit,Alert Threshold,Cost\n';
           csvContent += allInventoryItems.map(item => {
             const name = (item.name || '').replace(/"/g, '""');
@@ -1496,14 +1496,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return `${item.id},"${name}",${item.quantity},"${unit}",${item.alertThreshold},${item.cost || 0}`;
           }).join('\n');
           
-          csvContent += '\n\n=== TABLES ===\n';
+          csvContent += '\n\nTABLES\n';
           csvContent += 'ID,Name,Capacity,Occupied\n';
           csvContent += allTables.map(table => {
             const name = (table.name || '').replace(/"/g, '""');
             return `${table.id},"${name}",${table.capacity},${table.occupied}`;
           }).join('\n');
           
-          csvContent += '\n\n=== EXPENSES ===\n';
+          csvContent += '\n\nEXPENSES\n';
           csvContent += 'ID,Description,Amount,Category,Date,Notes\n';
           csvContent += allExpenses.map(expense => {
             const description = (expense.description || '').replace(/"/g, '""');
@@ -1571,12 +1571,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0
       };
 
-      // Find each section by looking for specific patterns
-      const categoryMatch = csvData.match(/=== CATEGORIES ===\n([\s\S]*?)(?=\n\n=== |$)/);
-      const menuItemMatch = csvData.match(/=== MENU ITEMS ===\n([\s\S]*?)(?=\n\n=== |$)/);
-      const inventoryMatch = csvData.match(/=== INVENTORY ===\n([\s\S]*?)(?=\n\n=== |$)/);
-      const tableMatch = csvData.match(/=== TABLES ===\n([\s\S]*?)(?=\n\n=== |$)/);
-      const expenseMatch = csvData.match(/=== EXPENSES ===\n([\s\S]*?)(?=\n\n=== |$)/);
+      // Find each section by looking for specific patterns (without === markers)
+      const categoryMatch = csvData.match(/CATEGORIES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
+      const menuItemMatch = csvData.match(/MENU ITEMS\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
+      const inventoryMatch = csvData.match(/INVENTORY\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
+      const tableMatch = csvData.match(/TABLES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
+      const expenseMatch = csvData.match(/EXPENSES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
 
       // Process categories
       if (categoryMatch) {

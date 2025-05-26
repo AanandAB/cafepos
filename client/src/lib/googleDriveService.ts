@@ -40,55 +40,65 @@ export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_back
     if (data.data) {
       // Add categories section
       if (data.data.categories && data.data.categories.length > 0) {
-        csvContent += '=== CATEGORIES ===\n';
+        csvContent += 'CATEGORIES\n';
         csvContent += 'ID,Name,Description\n';
-        csvContent += data.data.categories.map((cat: any) => 
-          `${cat.id},"${cat.name}","${cat.description || ''}"`
-        ).join('\n');
+        csvContent += data.data.categories.map((cat: any) => {
+          const name = (cat.name || '').replace(/"/g, '""');
+          const description = (cat.description || '').replace(/"/g, '""');
+          return `${cat.id},"${name}","${description}"`;
+        }).join('\n');
         csvContent += '\n\n';
       }
       
       // Add menu items section
       if (data.data.menuItems && data.data.menuItems.length > 0) {
-        csvContent += '=== MENU ITEMS ===\n';
+        csvContent += 'MENU ITEMS\n';
         csvContent += 'ID,Name,Description,Price,Category ID,Tax Rate,Available,Stock Quantity\n';
-        csvContent += data.data.menuItems.map((item: any) => 
-          `${item.id},"${item.name}","${item.description || ''}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`
-        ).join('\n');
+        csvContent += data.data.menuItems.map((item: any) => {
+          const name = (item.name || '').replace(/"/g, '""');
+          const description = (item.description || '').replace(/"/g, '""');
+          return `${item.id},"${name}","${description}",${item.price},${item.categoryId},${item.taxRate},${item.available},${item.stockQuantity || 0}`;
+        }).join('\n');
         csvContent += '\n\n';
       }
       
       // Add inventory section
       if (data.data.inventoryItems && data.data.inventoryItems.length > 0) {
-        csvContent += '=== INVENTORY ===\n';
+        csvContent += 'INVENTORY\n';
         csvContent += 'ID,Name,Quantity,Unit,Alert Threshold,Cost\n';
-        csvContent += data.data.inventoryItems.map((item: any) => 
-          `${item.id},"${item.name}",${item.quantity},"${item.unit}",${item.alertThreshold},${item.cost || 0}`
-        ).join('\n');
+        csvContent += data.data.inventoryItems.map((item: any) => {
+          const name = (item.name || '').replace(/"/g, '""');
+          const unit = (item.unit || '').replace(/"/g, '""');
+          return `${item.id},"${name}",${item.quantity},"${unit}",${item.alertThreshold},${item.cost || 0}`;
+        }).join('\n');
         csvContent += '\n\n';
       }
       
       // Add tables section
       if (data.data.tables && data.data.tables.length > 0) {
-        csvContent += '=== TABLES ===\n';
+        csvContent += 'TABLES\n';
         csvContent += 'ID,Name,Capacity,Occupied\n';
-        csvContent += data.data.tables.map((table: any) => 
-          `${table.id},"${table.name}",${table.capacity},${table.occupied}`
-        ).join('\n');
+        csvContent += data.data.tables.map((table: any) => {
+          const name = (table.name || '').replace(/"/g, '""');
+          return `${table.id},"${name}",${table.capacity},${table.occupied}`;
+        }).join('\n');
         csvContent += '\n\n';
       }
       
       // Add expenses section
       if (data.data.expenses && data.data.expenses.length > 0) {
-        csvContent += '=== EXPENSES ===\n';
+        csvContent += 'EXPENSES\n';
         csvContent += 'ID,Description,Amount,Category,Date,Notes\n';
-        csvContent += data.data.expenses.map((expense: any) => 
-          `${expense.id},"${expense.description}",${expense.amount},"${expense.category}","${new Date(expense.date).toISOString()}","${expense.notes || ''}"`
-        ).join('\n');
+        csvContent += data.data.expenses.map((expense: any) => {
+          const description = (expense.description || '').replace(/"/g, '""');
+          const category = (expense.category || '').replace(/"/g, '""');
+          const notes = (expense.notes || '').replace(/"/g, '""');
+          return `${expense.id},"${description}",${expense.amount},"${category}","${new Date(expense.date).toISOString()}","${notes}"`;
+        }).join('\n');
       }
     } else {
-      // Fallback to JSON if data structure is unexpected
-      csvContent = JSON.stringify(data, null, 2);
+      // If no data sections found, create empty CSV
+      csvContent = 'No data available for backup';
     }
 
     // Create a file metadata object for CSV
