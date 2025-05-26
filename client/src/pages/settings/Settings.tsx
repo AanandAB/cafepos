@@ -531,25 +531,25 @@ export default function Settings() {
                   </p>
                   
                   <div className="space-y-2">
-                    <Button onClick={() => handleExportCSV('all')} className="w-full">
-                      <Download className="mr-2 h-4 w-4" />
+                    <Button onClick={() => window.open('/api/settings/export-csv/all')} className="w-full">
+                      <DownloadCloud className="mr-2 h-4 w-4" />
                       Export Complete Backup (CSV)
                     </Button>
                     
                     <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => handleExportCSV('menu-items')} variant="outline" size="sm">
+                      <Button onClick={() => window.open('/api/settings/export-csv/menu-items')} variant="outline" size="sm">
                         Menu Items
                       </Button>
-                      <Button onClick={() => handleExportCSV('inventory')} variant="outline" size="sm">
+                      <Button onClick={() => window.open('/api/settings/export-csv/inventory')} variant="outline" size="sm">
                         Inventory
                       </Button>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => handleExportCSV('categories')} variant="outline" size="sm">
+                      <Button onClick={() => window.open('/api/settings/export-csv/categories')} variant="outline" size="sm">
                         Categories
                       </Button>
-                      <Button onClick={() => handleExportCSV('expenses')} variant="outline" size="sm">
+                      <Button onClick={() => window.open('/api/settings/export-csv/expenses')} variant="outline" size="sm">
                         Expenses
                       </Button>
                     </div>
