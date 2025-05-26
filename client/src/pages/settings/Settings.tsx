@@ -262,16 +262,41 @@ export default function Settings() {
       });
       
       // Wait a moment for the user to see the backup notification
-      setTimeout(() => {
-        // Now perform the reset
-        window.location.reload();
-        
-        setIsResetDialogOpen(false);
-        
-        toast({
-          title: "Database reset complete",
-          description: "Your database has been reset to default values. Your backup was saved automatically.",
-        });
+      setTimeout(async () => {
+        try {
+          // Call the proper reset endpoint
+          const resetResponse = await fetch('/api/settings/reset-database', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!resetResponse.ok) {
+            throw new Error('Failed to reset database');
+          }
+
+          setIsResetDialogOpen(false);
+          
+          toast({
+            title: "Database reset complete",
+            description: "Your database has been reset to default values. Your backup was saved automatically.",
+          });
+
+          // Reload the page to refresh all components with new data
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+
+        } catch (resetError) {
+          console.error('Database reset failed:', resetError);
+          toast({
+            variant: "destructive",
+            title: "Reset failed",
+            description: "Failed to reset database. Please try again.",
+          });
+          setIsResetDialogOpen(false);
+        }
       }, 2000);
       
     } catch (error) {

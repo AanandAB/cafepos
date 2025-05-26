@@ -1331,6 +1331,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset database endpoint - clears all data and reinitializes
+  app.post('/api/settings/reset-database', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      // Import the database setup function and schema
+      const { initializeDatabase } = await import('./db-setup');
+      const { db } = await import('./db');
+      const { 
+        orderItems, 
+        orders, 
+        expenses, 
+        employeeShifts, 
+        menuItems, 
+        categories, 
+        inventoryItems, 
+        tables, 
+        settings 
+      } = await import('@shared/schema');
+      
+      // Clear all tables first (except users to keep authentication)
+      await db.delete(orderItems);
+      await db.delete(orders);
+      await db.delete(expenses);
+      await db.delete(employeeShifts);
+      await db.delete(menuItems);
+      await db.delete(categories);
+      await db.delete(inventoryItems);
+      await db.delete(tables);
+      // Keep users table intact for authentication
+      // Only delete settings
+      await db.delete(settings);
+      
+      console.log('All data cleared, reinitializing database...');
+      
+      // Reinitialize with fresh data
+      await initializeDatabase();
+      
+      res.json({ success: true, message: "Database reset successfully" });
+    } catch (error) {
+      console.error("Error during database reset:", error);
+      res.status(500).json({ 
+        message: "Database reset failed", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
