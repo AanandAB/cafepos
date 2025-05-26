@@ -1571,36 +1571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       };
 
-      // Clear existing data before restore (except users and employee shifts)
-      console.log('Clearing existing data before restore...');
-      
-      // Use storage methods to clear data properly
-      const existingExpenses = await storage.getExpenses();
-      for (const expense of existingExpenses) {
-        await storage.deleteExpense(expense.id);
-      }
-      
-      const existingMenuItems = await storage.getMenuItems();
-      for (const item of existingMenuItems) {
-        await storage.deleteMenuItem(item.id);
-      }
-      
-      const existingInventoryItems = await storage.getInventoryItems();
-      for (const item of existingInventoryItems) {
-        await storage.deleteInventoryItem(item.id);
-      }
-      
-      const existingTables = await storage.getTables();
-      for (const table of existingTables) {
-        await storage.deleteTable(table.id);
-      }
-      
-      const existingCategories = await storage.getCategories();
-      for (const category of existingCategories) {
-        await storage.deleteCategory(category.id);
-      }
-      
-      console.log('Existing data cleared successfully');
+      // Note: Using update-or-create logic to prevent duplicates without clearing existing data
 
       let importedCounts = {
         categories: 0,
@@ -1624,10 +1595,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 2 && values[1]) {
-              await storage.createCategory({
-                name: values[1],
-                description: values[2] || ''
-              });
+              // Check if category with same name exists
+              const existingCategories = await storage.getCategories();
+              const existing = existingCategories.find(cat => cat.name === values[1]);
+              
+              if (existing) {
+                // Update existing category
+                await storage.updateCategory(existing.id, {
+                  description: values[2] || ''
+                });
+              } else {
+                // Create new category
+                await storage.createCategory({
+                  name: values[1],
+                  description: values[2] || ''
+                });
+              }
               importedCounts.categories++;
             }
           } catch (error) {
@@ -1643,7 +1626,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 6 && values[1]) {
-              await storage.createMenuItem({
+              // Check if menu item with same name exists
+              const existingMenuItems = await storage.getMenuItems();
+              const existing = existingMenuItems.find(item => item.name === values[1]);
+              
+              const menuItemData = {
                 name: values[1],
                 description: values[2] || '',
                 price: parseFloat(values[3]) || 0,
@@ -1651,7 +1638,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 taxRate: parseFloat(values[5]) || 0,
                 available: values[6] === 'true',
                 stockQuantity: parseInt(values[7]) || 0
-              });
+              };
+              
+              if (existing) {
+                // Update existing menu item
+                await storage.updateMenuItem(existing.id, menuItemData);
+              } else {
+                // Create new menu item
+                await storage.createMenuItem(menuItemData);
+              }
               importedCounts.menuItems++;
             }
           } catch (error) {
@@ -1667,13 +1662,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 4 && values[1]) {
-              await storage.createInventoryItem({
+              // Check if inventory item with same name exists
+              const existingInventoryItems = await storage.getInventoryItems();
+              const existing = existingInventoryItems.find(item => item.name === values[1]);
+              
+              const inventoryData = {
                 name: values[1],
                 quantity: parseFloat(values[2]) || 0,
                 unit: values[3] || 'units',
                 alertThreshold: parseFloat(values[4]) || 0,
                 cost: parseFloat(values[5]) || 0
-              });
+              };
+              
+              if (existing) {
+                // Update existing inventory item
+                await storage.updateInventoryItem(existing.id, inventoryData);
+              } else {
+                // Create new inventory item
+                await storage.createInventoryItem(inventoryData);
+              }
               importedCounts.inventory++;
             }
           } catch (error) {
@@ -1689,11 +1696,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 3 && values[1]) {
-              await storage.createTable({
+              // Check if table with same name exists
+              const existingTables = await storage.getTables();
+              const existing = existingTables.find(table => table.name === values[1]);
+              
+              const tableData = {
                 name: values[1],
                 capacity: parseInt(values[2]) || 2,
                 occupied: values[3] === 'true'
-              });
+              };
+              
+              if (existing) {
+                // Update existing table
+                await storage.updateTable(existing.id, tableData);
+              } else {
+                // Create new table
+                await storage.createTable(tableData);
+              }
               importedCounts.tables++;
             }
           } catch (error) {
@@ -1709,6 +1728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const values = parseCSVLine(line);
             if (values.length >= 4 && values[1]) {
+              // Always create new expenses (they're timestamped and shouldn't be deduplicated)
               await storage.createExpense({
                 description: values[1],
                 amount: parseFloat(values[2]) || 0,
