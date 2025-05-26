@@ -202,8 +202,9 @@ export default function Settings() {
     try {
       const response = await fetch(`/api/settings/export-csv/${type}`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'text/csv',
         },
       });
       
