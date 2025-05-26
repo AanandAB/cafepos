@@ -15,7 +15,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowUpFromLine, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Loader2, FileSpreadsheet, FileText, Receipt, Calendar, Download } from 'lucide-react';
 
 export default function BackupRestore() {
   const { toast } = useToast();
@@ -262,6 +262,34 @@ export default function BackupRestore() {
     }
   };
 
+  const handleExport = async (type: string) => {
+    try {
+      const response = await fetch(`/api/settings/export-csv/${type}`);
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'Export Successful',
+        description: `${type.replace('-', ' ')} data has been downloaded successfully.`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Export Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+      });
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -381,6 +409,70 @@ export default function BackupRestore() {
             )}
           </div>
         )}
+      </CardContent>
+    </Card>
+
+    {/* Sales Reports Export Section */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5" />
+          Sales Reports & Ledger
+        </CardTitle>
+        <CardDescription>
+          Export detailed sales reports and ledger information for accounting and analysis
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Button
+            variant="outline"
+            onClick={() => handleExport('sales-ledger')}
+            className="flex flex-col items-center gap-2 h-auto p-4"
+          >
+            <FileText className="h-6 w-6" />
+            <div className="text-center">
+              <div className="font-medium">Sales Ledger</div>
+              <div className="text-xs text-muted-foreground">Order summary with totals</div>
+            </div>
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => handleExport('sales-details')}
+            className="flex flex-col items-center gap-2 h-auto p-4"
+          >
+            <Receipt className="h-6 w-6" />
+            <div className="text-center">
+              <div className="font-medium">Sales Details</div>
+              <div className="text-xs text-muted-foreground">Item-wise breakdown</div>
+            </div>
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => handleExport('daily-summary')}
+            className="flex flex-col items-center gap-2 h-auto p-4"
+          >
+            <Calendar className="h-6 w-6" />
+            <div className="text-center">
+              <div className="font-medium">Daily Summary</div>
+              <div className="text-xs text-muted-foreground">Day-wise sales totals</div>
+            </div>
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => handleExport('all')}
+            className="flex flex-col items-center gap-2 h-auto p-4"
+          >
+            <Download className="h-6 w-6" />
+            <div className="text-center">
+              <div className="font-medium">Complete Backup</div>
+              <div className="text-xs text-muted-foreground">All data in CSV format</div>
+            </div>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

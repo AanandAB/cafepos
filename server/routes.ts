@@ -1450,6 +1450,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filename = 'categories.csv';
           break;
 
+        case 'sales-ledger':
+          const orders = await storage.getOrders();
+          csvContent = 'Order ID,Date,Table,Customer Name,Total Amount,Tax Amount,Payment Method,Status,Items\n';
+          for (const order of orders) {
+            const orderItems = await storage.getOrderItemsByOrder(order.id);
+            const itemsDetail = orderItems.map(item => `${item.menuItemId}x${item.quantity}`).join(';');
+            const date = new Date(order.createdAt).toLocaleDateString('en-IN');
+            const customerName = (order.customerName || 'Walk-in').replace(/"/g, '""');
+            const tableName = order.tableId ? `Table ${order.tableId}` : 'Takeaway';
+            csvContent += `${order.id},"${date}","${tableName}","${customerName}",${order.total},${order.taxAmount || 0},"${order.paymentMethod}","${order.status}","${itemsDetail}"\n`;
+          }
+          filename = 'sales-ledger.csv';
+          break;
+
+        case 'sales-details':
+          const detailedOrders = await storage.getOrders();
+          csvContent = 'Order ID,Date,Time,Table,Customer Name,Item Name,Quantity,Unit Price,Item Total,Tax Rate,Tax Amount,Order Total,Payment Method,Status\n';
+          for (const order of detailedOrders) {
+            const orderItems = await storage.getOrderItemsByOrder(order.id);
+            const menuItems = await storage.getMenuItems();
+            
+            for (const item of orderItems) {
+              const menuItem = menuItems.find(m => m.id === item.menuItemId);
+              const date = new Date(order.createdAt).toLocaleDateString('en-IN');
+              const time = new Date(order.createdAt).toLocaleTimeString('en-IN');
+              const customerName = (order.customerName || 'Walk-in').replace(/"/g, '""');
+              const tableName = order.tableId ? `Table ${order.tableId}` : 'Takeaway';
+              const itemName = (menuItem?.name || 'Unknown Item').replace(/"/g, '""');
+              const unitPrice = item.price;
+              const itemTotal = item.quantity * item.price;
+              const taxRate = menuItem?.taxRate || 0;
+              const itemTaxAmount = (itemTotal * taxRate) / 100;
+              
+              csvContent += `${order.id},"${date}","${time}","${tableName}","${customerName}","${itemName}",${item.quantity},${unitPrice},${itemTotal},${taxRate}%,${itemTaxAmount.toFixed(2)},${order.total},"${order.paymentMethod}","${order.status}"\n`;
+            }
+          }
+          filename = 'sales-details.csv';
+          break;
+
+        case 'daily-summary':
+          const summaryOrders = await storage.getOrders();
+          const dailySummary = new Map();
+          
+          for (const order of summaryOrders) {
+            const date = new Date(order.createdAt).toLocaleDateString('en-IN');
+            if (!dailySummary.has(date)) {
+              dailySummary.set(date, {
+                date,
+                totalOrders: 0,
+                totalSales: 0,
+                totalTax: 0,
+                cashPayments: 0,
+                cardPayments: 0,
+                upiPayments: 0
+              });
+            }
+            
+            const summary = dailySummary.get(date);
+            summary.totalOrders++;
+            summary.totalSales += order.total;
+            summary.totalTax += order.taxAmount || 0;
+            
+            if (order.paymentMethod === 'cash') summary.cashPayments += order.total;
+            else if (order.paymentMethod === 'card') summary.cardPayments += order.total;
+            else if (order.paymentMethod === 'upi') summary.upiPayments += order.total;
+          }
+          
+          csvContent = 'Date,Total Orders,Total Sales,Total Tax,Cash Payments,Card Payments,UPI Payments\n';
+          Array.from(dailySummary.values()).forEach(summary => {
+            csvContent += `"${summary.date}",${summary.totalOrders},${summary.totalSales},${summary.totalTax},${summary.cashPayments},${summary.cardPayments},${summary.upiPayments}\n`;
+          });
+          filename = 'daily-summary.csv';
+          break;
+
         case 'tables':
           const tables = await storage.getTables();
           csvContent = 'ID,Name,Capacity,Occupied\n';
