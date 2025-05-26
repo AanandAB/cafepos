@@ -923,9 +923,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get all inventory items
         const inventoryItems = await storage.getInventoryItems();
         
-        // Create virtual expense entries for inventory items
+        // Create virtual expense entries for inventory items only if they have been purchased
+        // Don't show default inventory as expenses until they're actually purchased
         const inventoryExpenses = inventoryItems
-          .filter(item => item.cost !== null && item.cost > 0)
+          .filter(item => item.cost !== null && item.cost > 0 && item.quantity > 0)
+          .filter(item => {
+            // Only show as expense if there are actual expense records or purchases
+            // For now, don't auto-create virtual expenses for default inventory
+            return false; // Disable virtual inventory expenses for cleaner experience
+          })
           .map(item => ({
             id: -item.id, // Use negative IDs to avoid conflicts
             description: `Inventory: ${item.name}`,
@@ -1305,6 +1311,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process import in a transaction-like manner
       try {
+        // Clear existing data first (similar to reset but keep users)
+        const { db } = await import('./db');
+        const { 
+          orderItems, 
+          orders, 
+          expenses, 
+          employeeShifts, 
+          menuItems, 
+          categories, 
+          inventoryItems, 
+          tables, 
+          settings 
+        } = await import('@shared/schema');
+        
+        // Clear all tables (except users for authentication)
+        await db.delete(orderItems);
+        await db.delete(orders);
+        await db.delete(expenses);
+        await db.delete(employeeShifts);
+        await db.delete(menuItems);
+        await db.delete(categories);
+        await db.delete(inventoryItems);
+        await db.delete(tables);
+        await db.delete(settings);
+        
+        // Import categories first (needed for menu items)
+        if (importData.data.categories) {
+          for (const category of importData.data.categories) {
+            await storage.createCategory({
+              name: category.name,
+              description: category.description
+            });
+          }
+        }
+        
+        // Import menu items
+        if (importData.data.menuItems) {
+          for (const item of importData.data.menuItems) {
+            await storage.createMenuItem({
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              categoryId: item.categoryId,
+              taxRate: item.taxRate,
+              available: item.available,
+              stockQuantity: item.stockQuantity
+            });
+          }
+        }
+        
+        // Import inventory items
+        if (importData.data.inventoryItems) {
+          for (const item of importData.data.inventoryItems) {
+            await storage.createInventoryItem({
+              name: item.name,
+              quantity: item.quantity,
+              unit: item.unit,
+              alertThreshold: item.alertThreshold,
+              cost: item.cost
+            });
+          }
+        }
+        
+        // Import tables
+        if (importData.data.tables) {
+          for (const table of importData.data.tables) {
+            await storage.createTable({
+              name: table.name,
+              capacity: table.capacity,
+              occupied: table.occupied
+            });
+          }
+        }
+        
+        // Import expenses
+        if (importData.data.expenses) {
+          for (const expense of importData.data.expenses) {
+            // Only import real expenses, not virtual inventory ones
+            if (!expense.isInventoryItem) {
+              await storage.createExpense({
+                description: expense.description,
+                amount: expense.amount,
+                category: expense.category,
+                userId: expense.userId,
+                date: new Date(expense.date),
+                notes: expense.notes
+              });
+            }
+          }
+        }
+        
         // Import settings
         if (importData.data.settings) {
           for (const setting of importData.data.settings) {
@@ -1315,8 +1412,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         }
-        
-        // Additional import logic for other entities would go here
         
         res.json({ success: true, message: "Data imported successfully" });
       } catch (error) {
