@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { 
   loginSchema, 
   insertUserSchema,
@@ -12,7 +13,14 @@ import {
   insertOrderItemSchema,
   insertEmployeeShiftSchema,
   insertSettingSchema,
-  insertExpenseSchema
+  insertExpenseSchema,
+  categories,
+  menuItems,
+  inventoryItems,
+  tables,
+  orders,
+  orderItems,
+  expenses
 } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -1562,6 +1570,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         result.push(current.trim());
         return result;
       };
+
+      // Clear existing data before restore (except users and employee shifts)
+      console.log('Clearing existing data before restore...');
+      
+      // Use storage methods to clear data properly
+      const existingExpenses = await storage.getExpenses();
+      for (const expense of existingExpenses) {
+        await storage.deleteExpense(expense.id);
+      }
+      
+      const existingMenuItems = await storage.getMenuItems();
+      for (const item of existingMenuItems) {
+        await storage.deleteMenuItem(item.id);
+      }
+      
+      const existingInventoryItems = await storage.getInventoryItems();
+      for (const item of existingInventoryItems) {
+        await storage.deleteInventoryItem(item.id);
+      }
+      
+      const existingTables = await storage.getTables();
+      for (const table of existingTables) {
+        await storage.deleteTable(table.id);
+      }
+      
+      const existingCategories = await storage.getCategories();
+      for (const category of existingCategories) {
+        await storage.deleteCategory(category.id);
+      }
+      
+      console.log('Existing data cleared successfully');
 
       let importedCounts = {
         categories: 0,
