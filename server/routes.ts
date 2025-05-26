@@ -1817,10 +1817,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
-      if (categoryIndex !== -1) {
-        const nextIndex = menuItemIndex !== -1 ? menuItemIndex : csvData.length;
-        categoryData = csvData.substring(categoryIndex + 'CATEGORIES\n'.length, nextIndex).trim();
-      }
+
+  return server;
+}
       
       if (menuItemIndex !== -1) {
         const nextIndex = inventoryIndex !== -1 ? inventoryIndex : csvData.length;
