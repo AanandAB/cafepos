@@ -144,36 +144,9 @@ export default function Settings() {
     );
   };
   
-  // Export data as JSON
+  // Export data as CSV (replaces old JSON export)
   const handleExportData = () => {
-    try {
-      const exportData = {
-        settings: settings || [],
-        exportDate: new Date().toISOString(),
-        version: "1.0"
-      };
-      
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-      
-      const exportFileName = `cafe-pos-backup-${new Date().toISOString().split('T')[0]}.json`;
-      
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileName);
-      linkElement.click();
-      
-      toast({
-        title: "Data exported",
-        description: "Your data has been exported successfully",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Export failed",
-        description: "There was an error exporting your data",
-      });
-    }
+    handleExportCSV('all');
   };
   
   // Handle data import
@@ -612,43 +585,7 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* JSON Backup & Restore */}
-          <Card>
-            <CardHeader>
-              <CardTitle>JSON Backup & Restore</CardTitle>
-              <CardDescription>
-                Complete system backup in JSON format (includes all settings)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={handleExportData}
-                >
-                  <DownloadCloud className="mr-2 h-4 w-4" />
-                  Export JSON Backup
-                </Button>
-                
-                <div className="flex-1">
-                  <Label htmlFor="import-file" className="mb-2 block">Import JSON Backup</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="import-file"
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportData}
-                      className="flex-1"
-                    />
-                    <Button variant="outline" size="icon">
-                      <UploadCloud className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
           
           {/* Google Drive Backup & Restore */}
           <BackupRestore />

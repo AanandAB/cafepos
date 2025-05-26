@@ -121,14 +121,14 @@ export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_back
       const { id } = await createResponse.json();
       console.log("File created with ID:", id);
 
-      // Then upload the content to that file
+      // Then upload the CSV content to that file
       const uploadResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/csv',
         },
-        body: JSON.stringify(data),
+        body: csvContent,
       });
 
       if (!uploadResponse.ok) {
@@ -181,9 +181,9 @@ export const fetchBackupsFromDrive = async (): Promise<any[]> => {
       throw new Error('No Google Drive access token found. Please sign in with Google first.');
     }
 
-    // Search for JSON files created by the app
+    // Search for CSV files created by the app
     const response = await fetch(
-      'https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27application/json%27&fields=files(id,name,createdTime,modifiedTime)',
+      'https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27text/csv%27&fields=files(id,name,createdTime,modifiedTime)',
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -224,7 +224,7 @@ export const restoreFromDrive = async (fileId: string): Promise<any> => {
       throw new Error(`Failed to download backup: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const backupData = await response.json();
+    const backupData = await response.text();
     return backupData;
   } catch (error) {
     console.error('Error restoring from Google Drive:', error);

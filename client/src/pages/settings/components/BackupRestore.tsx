@@ -194,7 +194,7 @@ export default function BackupRestore() {
         return;
       }
 
-      const fileName = `cafe_pos_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileName = `cafe_pos_backup_${new Date().toISOString().split('T')[0]}.csv`;
       await backupToDrive(databaseData, fileName);
       
       toast({
