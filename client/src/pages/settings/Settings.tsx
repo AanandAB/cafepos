@@ -224,18 +224,65 @@ export default function Settings() {
     e.target.value = '';
   };
   
-  // Simulated database reset (since we're using in-memory storage)
-  const handleResetDatabase = () => {
-    // This would normally be a real database reset
-    // For in-memory storage, we'd just reload the page
-    window.location.reload();
-    
-    setIsResetDialogOpen(false);
-    
-    toast({
-      title: "Database reset",
-      description: "Your database has been reset to default values",
-    });
+  // Enhanced database reset with automatic backup
+  const handleResetDatabase = async () => {
+    try {
+      // First, create an automatic backup
+      toast({
+        title: "Creating backup",
+        description: "Creating automatic backup before reset...",
+      });
+
+      // Fetch current data for backup
+      const response = await fetch('/api/settings/export-data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch data for backup');
+      }
+      
+      const backupData = await response.json();
+      
+      // Create backup file with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupFileName = `pre_reset_backup_${timestamp}.json`;
+      
+      // Download the backup file automatically
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = backupFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Backup created",
+        description: `Backup saved as ${backupFileName}. Now resetting database...`,
+      });
+      
+      // Wait a moment for the user to see the backup notification
+      setTimeout(() => {
+        // Now perform the reset
+        window.location.reload();
+        
+        setIsResetDialogOpen(false);
+        
+        toast({
+          title: "Database reset complete",
+          description: "Your database has been reset to default values. Your backup was saved automatically.",
+        });
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Reset with backup failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Reset failed",
+        description: "Could not create backup before reset. Reset cancelled for safety.",
+      });
+      setIsResetDialogOpen(false);
+    }
   };
   
   return (
@@ -408,10 +455,15 @@ export default function Settings() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>Reset Database with Automatic Backup</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action will reset all data to default values. This action cannot be undone.
-                      All your orders, inventory and custom settings will be lost.
+                      This will reset all data to default values and cannot be undone. However, an automatic backup 
+                      will be created and downloaded before the reset begins.
+                      <br /><br />
+                      <strong>What will happen:</strong>
+                      <br />• Your current data will be automatically backed up and downloaded
+                      <br />• All orders, inventory, and custom settings will be reset to defaults
+                      <br />• You can restore from the backup file later if needed
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
