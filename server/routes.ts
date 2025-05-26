@@ -1892,6 +1892,350 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  return server;
+}
+      
+      if (menuItemIndex !== -1) {
+        const nextIndex = inventoryIndex !== -1 ? inventoryIndex : csvData.length;
+        menuItemData = csvData.substring(menuItemIndex + 'MENU ITEMS\n'.length, nextIndex).trim();
+      }
+      
+      if (inventoryIndex !== -1) {
+        const nextIndex = tableIndex !== -1 ? tableIndex : csvData.length;
+        inventoryData = csvData.substring(inventoryIndex + 'INVENTORY\n'.length, nextIndex).trim();
+      }
+      
+      if (tableIndex !== -1) {
+        const nextIndex = expenseIndex !== -1 ? expenseIndex : csvData.length;
+        tableData = csvData.substring(tableIndex + 'TABLES\n'.length, nextIndex).trim();
+      }
+      
+      if (expenseIndex !== -1) {
+        expenseData = csvData.substring(expenseIndex + 'EXPENSES\n'.length).trim();
+      }
+      
+      console.log('Section data found:', {
+        categories: !!categoryData,
+        menuItems: !!menuItemData,
+        inventory: !!inventoryData,
+        tables: !!tableData,
+        expenses: !!expenseData
+      });
+      
+      console.log('Menu item data preview:', menuItemData.substring(0, 200));
+
+      // Process categories
+      if (categoryData) {
+        const lines = categoryData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} category lines`);
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 2 && values[1]) {
+              console.log('Processing category:', values);
+              
+              // Check if category with same name exists (case-insensitive)
+              const existingCategories = await storage.getCategories();
+              const existing = existingCategories.find(cat => cat.name.toLowerCase() === values[1].toLowerCase());
+              
+              if (existing) {
+                console.log(`Updating existing category: ${values[1]}`);
+                await storage.updateCategory(existing.id, {
+                  description: values[2] || ''
+                });
+              } else {
+                console.log(`Creating new category: ${values[1]}`);
+                await storage.createCategory({
+                  name: values[1],
+                  description: values[2] || ''
+                });
+              }
+              importedCounts.categories++;
+            }
+          } catch (error) {
+            console.log('Skipping invalid category line:', line);
+          }
+        }
+      }
+
+      // Process menu items
+      if (menuItemData) {
+        const lines = menuItemData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} menu item lines`);
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 7 && values[1]) {
+              console.log('Processing menu item:', values);
+              
+              // Check if menu item with same name exists
+              const existingMenuItems = await storage.getMenuItems();
+              const existing = existingMenuItems.find(item => item.name.toLowerCase() === values[1].toLowerCase());
+              
+              const menuItemData = {
+                name: values[1],
+                description: values[2] || '',
+                price: parseFloat(values[3]) || 0,
+                categoryId: parseInt(values[4]) || 1,
+                taxRate: parseFloat(values[5]) || 0,
+                available: values[6] === 'true',
+                stockQuantity: parseInt(values[7]) || 0
+              };
+              
+              if (existing) {
+                console.log(`Updating existing menu item: ${values[1]}`);
+                await storage.updateMenuItem(existing.id, menuItemData);
+              } else {
+                console.log(`Creating new menu item: ${values[1]}`);
+                await storage.createMenuItem(menuItemData);
+              }
+              importedCounts.menuItems++;
+            }
+          } catch (error) {
+            console.log('Skipping invalid menu item line:', line);
+          }
+        }
+      }
+
+      // Process inventory
+      if (inventoryData) {
+        const lines = inventoryData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} inventory lines`);
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 4 && values[1]) {
+              console.log('Processing inventory item:', values);
+              
+              // Check if inventory item with same name exists (case-insensitive)
+              const existingInventoryItems = await storage.getInventoryItems();
+              const existing = existingInventoryItems.find(item => item.name.toLowerCase() === values[1].toLowerCase());
+              
+              const inventoryData = {
+                name: values[1],
+                quantity: parseFloat(values[2]) || 0,
+                unit: values[3] || 'units',
+                alertThreshold: parseFloat(values[4]) || 0,
+                cost: parseFloat(values[5]) || 0
+              };
+              
+              if (existing) {
+                console.log(`Updating existing inventory item: ${values[1]}`);
+                await storage.updateInventoryItem(existing.id, inventoryData);
+              } else {
+                console.log(`Creating new inventory item: ${values[1]}`);
+                await storage.createInventoryItem(inventoryData);
+              }
+              importedCounts.inventory++;
+            }
+          } catch (error) {
+            console.log('Skipping invalid inventory line:', line);
+          }
+        }
+      }
+
+      // Process tables
+      if (tableData) {
+        const lines = tableData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} table lines`);
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 3 && values[1]) {
+              console.log('Processing table:', values);
+              
+              // Check if table with same name exists (case-insensitive)
+              const existingTables = await storage.getTables();
+              const existing = existingTables.find(table => table.name.toLowerCase() === values[1].toLowerCase());
+              
+              const tableData = {
+                name: values[1],
+                capacity: parseInt(values[2]) || 2,
+                occupied: values[3] === 'true'
+              };
+              
+              if (existing) {
+                console.log(`Updating existing table: ${values[1]}`);
+                await storage.updateTable(existing.id, tableData);
+              } else {
+                console.log(`Creating new table: ${values[1]}`);
+                await storage.createTable(tableData);
+              }
+              importedCounts.tables++;
+            }
+          } catch (error) {
+            console.log('Skipping invalid table line:', line);
+          }
+        }
+      }
+
+      // Process expenses
+      if (expenseData) {
+        const lines = expenseData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Description'));
+        console.log(`Processing ${lines.length} expense lines`);
+        for (const line of lines) {
+          try {
+            const values = parseCSVLine(line);
+            if (values.length >= 4 && values[1]) {
+              // Always create new expenses (they're timestamped and shouldn't be deduplicated)
+              await storage.createExpense({
+                description: values[1],
+                amount: parseFloat(values[2]) || 0,
+                category: values[3] as any,
+                date: new Date(values[4]) || new Date(),
+                notes: values[5] || ''
+              });
+              importedCounts.expenses++;
+            }
+          } catch (error) {
+            console.log('Skipping invalid expense line:', line);
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Successfully restored backup: ${importedCounts.categories} categories, ${importedCounts.menuItems} menu items, ${importedCounts.inventory} inventory items, ${importedCounts.tables} tables, ${importedCounts.expenses} expenses`,
+        importedCounts 
+      });
+    } catch (error) {
+      console.error('CSV backup restore error:', error);
+      res.status(500).json({ 
+        message: 'Failed to restore CSV backup', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Import CSV data
+  app.post('/api/settings/import-csv/:type', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      const { type } = req.params;
+      const { csvData } = req.body;
+      
+      if (!csvData) {
+        return res.status(400).json({ message: 'CSV data is required' });
+      }
+
+      // Parse CSV data
+      const lines = csvData.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        return res.status(400).json({ message: 'CSV must contain header and at least one data row' });
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const dataRows = lines.slice(1);
+
+      let importedCount = 0;
+
+      switch (type) {
+        case 'categories':
+          for (const row of dataRows) {
+            const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+            if (values.length >= 2) {
+              await storage.createCategory({
+                name: values[1],
+                description: values[2] || ''
+              });
+              importedCount++;
+            }
+          }
+          break;
+
+        case 'inventory':
+          for (const row of dataRows) {
+            const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+            if (values.length >= 4) {
+              await storage.createInventoryItem({
+                name: values[1],
+                quantity: parseFloat(values[2]) || 0,
+                unit: values[3],
+                alertThreshold: parseFloat(values[4]) || 0,
+                cost: parseFloat(values[5]) || 0
+              });
+              importedCount++;
+            }
+          }
+          break;
+
+        case 'tables':
+          for (const row of dataRows) {
+            const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+            if (values.length >= 3) {
+              await storage.createTable({
+                name: values[1],
+                capacity: parseInt(values[2]) || 2,
+                occupied: values[3] === 'true'
+              });
+              importedCount++;
+            }
+          }
+          break;
+
+        default:
+          return res.status(400).json({ message: 'Invalid import type' });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Successfully imported ${importedCount} ${type} records from CSV`,
+        importedCount 
+      });
+    } catch (error) {
+      console.error('CSV import error:', error);
+      res.status(500).json({ 
+        message: 'Failed to import CSV data', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Reset database endpoint - clears all data and reinitializes
+  app.post('/api/settings/reset-database', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      // Import the database setup function and schema
+      const { initializeDatabase } = await import('./db-setup');
+      const { db } = await import('./db');
+      const { 
+        orderItems, 
+        orders, 
+        expenses, 
+        employeeShifts, 
+        menuItems, 
+        categories, 
+        inventoryItems, 
+        tables, 
+        settings 
+      } = await import('@shared/schema');
+      
+      // Clear all tables first (except users to keep authentication)
+      await db.delete(orderItems);
+      await db.delete(orders);
+      await db.delete(expenses);
+      await db.delete(employeeShifts);
+      await db.delete(menuItems);
+      await db.delete(categories);
+      await db.delete(inventoryItems);
+      await db.delete(tables);
+      // Keep users table intact for authentication
+      // Only delete settings
+      await db.delete(settings);
+      
+      console.log('All data cleared, reinitializing database...');
+      
+      // Reinitialize with fresh data
+      await initializeDatabase();
+      
+      res.json({ success: true, message: "Database reset successfully" });
+    } catch (error) {
+      console.error("Error during database reset:", error);
+      res.status(500).json({ 
+        message: "Database reset failed", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
