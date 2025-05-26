@@ -224,38 +224,61 @@ export default function Settings() {
     e.target.value = '';
   };
 
-  // CSV Export functionality
+  // CSV Export functionality - Fixed implementation
   const handleExportCSV = async (type: string) => {
     try {
-      const response = await fetch(`/api/settings/export-csv/${type}`);
+      const response = await fetch(`/api/settings/export-csv/${type}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to export CSV');
       }
       
-      // Get the filename from response headers
+      // Get the filename from response headers or create default
       const contentDisposition = response.headers.get('Content-Disposition');
-      const filename = contentDisposition?.split('filename=')[1] || `${type}.csv`;
+      let filename = `${type}-export.csv`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+      
+      // Get the CSV content
+      const csvContent = await response.text();
       
       // Create blob and download
-      const blob = await response.blob();
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
       URL.revokeObjectURL(url);
       
       toast({
-        title: "CSV exported",
-        description: `${type} data has been exported as CSV file`,
+        title: "CSV exported successfully",
+        description: `${filename} has been downloaded`,
       });
     } catch (error) {
+      console.error('CSV export error:', error);
       toast({
         variant: "destructive",
         title: "Export failed",
-        description: "Failed to export CSV data",
+        description: "Failed to export CSV data. Please try again.",
       });
     }
   };
@@ -531,25 +554,25 @@ export default function Settings() {
                   </p>
                   
                   <div className="space-y-2">
-                    <Button onClick={() => window.open('/api/settings/export-csv/all')} className="w-full">
+                    <Button onClick={() => handleExportCSV('all')} className="w-full">
                       <DownloadCloud className="mr-2 h-4 w-4" />
                       Export Complete Backup (CSV)
                     </Button>
                     
                     <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => window.open('/api/settings/export-csv/menu-items')} variant="outline" size="sm">
+                      <Button onClick={() => handleExportCSV('menu-items')} variant="outline" size="sm">
                         Menu Items
                       </Button>
-                      <Button onClick={() => window.open('/api/settings/export-csv/inventory')} variant="outline" size="sm">
+                      <Button onClick={() => handleExportCSV('inventory')} variant="outline" size="sm">
                         Inventory
                       </Button>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => window.open('/api/settings/export-csv/categories')} variant="outline" size="sm">
+                      <Button onClick={() => handleExportCSV('categories')} variant="outline" size="sm">
                         Categories
                       </Button>
-                      <Button onClick={() => window.open('/api/settings/export-csv/expenses')} variant="outline" size="sm">
+                      <Button onClick={() => handleExportCSV('expenses')} variant="outline" size="sm">
                         Expenses
                       </Button>
                     </div>
