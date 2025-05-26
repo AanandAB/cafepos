@@ -411,8 +411,31 @@ export default function BackupRestore() {
         )}
       </CardContent>
     </Card>
+    </>
+  );
+}
 
-    {/* Sales Reports Export Section */}
+function SalesReportsExport() {
+  const handleExport = async (type: string) => {
+    try {
+      const response = await fetch(`/api/settings/export-csv/${type}`);
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+  return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
