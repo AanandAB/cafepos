@@ -1581,26 +1581,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0
       };
 
-      // Find each section by looking for specific patterns (without === markers)
+      // Split CSV into sections by looking for section headers
       console.log('CSV Data preview:', csvData.substring(0, 500));
       
-      const categoryMatch = csvData.match(/CATEGORIES\n([\s\S]*?)(?=\n\nMENU ITEMS|$)/);
-      const menuItemMatch = csvData.match(/MENU ITEMS\n([\s\S]*?)(?=\n\nINVENTORY|$)/);
-      const inventoryMatch = csvData.match(/INVENTORY\n([\s\S]*?)(?=\n\nTABLES|$)/);
-      const tableMatch = csvData.match(/TABLES\n([\s\S]*?)(?=\n\nEXPENSES|$)/);
-      const expenseMatch = csvData.match(/EXPENSES\n([\s\S]*?)$/);
+      const sections = csvData.split(/\n\n(?=[A-Z\s]+\n)/);
+      console.log('Found sections:', sections.length);
       
-      console.log('Section matches found:', {
-        categories: !!categoryMatch,
-        menuItems: !!menuItemMatch,
-        inventory: !!inventoryMatch,
-        tables: !!tableMatch,
-        expenses: !!expenseMatch
+      let categoryData = '';
+      let menuItemData = '';
+      let inventoryData = '';
+      let tableData = '';
+      let expenseData = '';
+      
+      for (const section of sections) {
+        if (section.startsWith('CATEGORIES\n')) {
+          categoryData = section.replace('CATEGORIES\n', '');
+        } else if (section.startsWith('MENU ITEMS\n')) {
+          menuItemData = section.replace('MENU ITEMS\n', '');
+        } else if (section.startsWith('INVENTORY\n')) {
+          inventoryData = section.replace('INVENTORY\n', '');
+        } else if (section.startsWith('TABLES\n')) {
+          tableData = section.replace('TABLES\n', '');
+        } else if (section.startsWith('EXPENSES\n')) {
+          expenseData = section.replace('EXPENSES\n', '');
+        }
+      }
+      
+      console.log('Section data found:', {
+        categories: !!categoryData,
+        menuItems: !!menuItemData,
+        inventory: !!inventoryData,
+        tables: !!tableData,
+        expenses: !!expenseData
       });
 
       // Process categories
-      if (categoryMatch) {
-        const lines = categoryMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+      if (categoryData) {
+        const lines = categoryData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} category lines`);
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
@@ -1632,8 +1650,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process menu items
-      if (menuItemMatch) {
-        const lines = menuItemMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+      if (menuItemData) {
+        const lines = menuItemData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} menu item lines`);
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
@@ -1670,8 +1689,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process inventory
-      if (inventoryMatch) {
-        const lines = inventoryMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+      if (inventoryData) {
+        const lines = inventoryData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} inventory lines`);
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
@@ -1706,8 +1726,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process tables
-      if (tableMatch) {
-        const lines = tableMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+      if (tableData) {
+        const lines = tableData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Name'));
+        console.log(`Processing ${lines.length} table lines`);
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
@@ -1740,8 +1761,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process expenses
-      if (expenseMatch) {
-        const lines = expenseMatch[1].split('\n').filter((line: string) => line.trim() && !line.includes('ID,Description'));
+      if (expenseData) {
+        const lines = expenseData.split('\n').filter((line: string) => line.trim() && !line.includes('ID,Description'));
+        console.log(`Processing ${lines.length} expense lines`);
         for (const line of lines) {
           try {
             const values = parseCSVLine(line);
