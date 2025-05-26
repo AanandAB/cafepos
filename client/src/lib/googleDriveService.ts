@@ -37,7 +37,10 @@ export const backupToDrive = async (data: any, fileName: string = 'cafe_pos_back
     // Convert data to CSV format
     let csvContent = '';
     
-    if (data.data) {
+    // Check if csvData is provided directly (from server)
+    if (data.csvData && typeof data.csvData === 'string') {
+      csvContent = data.csvData;
+    } else if (data.data) {
       // Add categories section
       if (data.data.categories && data.data.categories.length > 0) {
         csvContent += 'CATEGORIES\n';
