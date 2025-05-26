@@ -1582,11 +1582,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Find each section by looking for specific patterns (without === markers)
-      const categoryMatch = csvData.match(/CATEGORIES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
-      const menuItemMatch = csvData.match(/MENU ITEMS\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
-      const inventoryMatch = csvData.match(/INVENTORY\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
-      const tableMatch = csvData.match(/TABLES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
-      const expenseMatch = csvData.match(/EXPENSES\n([\s\S]*?)(?=\n\n[A-Z\s]+\n|$)/);
+      console.log('CSV Data preview:', csvData.substring(0, 500));
+      
+      const categoryMatch = csvData.match(/CATEGORIES\n([\s\S]*?)(?=\n\nMENU ITEMS|$)/);
+      const menuItemMatch = csvData.match(/MENU ITEMS\n([\s\S]*?)(?=\n\nINVENTORY|$)/);
+      const inventoryMatch = csvData.match(/INVENTORY\n([\s\S]*?)(?=\n\nTABLES|$)/);
+      const tableMatch = csvData.match(/TABLES\n([\s\S]*?)(?=\n\nEXPENSES|$)/);
+      const expenseMatch = csvData.match(/EXPENSES\n([\s\S]*?)$/);
+      
+      console.log('Section matches found:', {
+        categories: !!categoryMatch,
+        menuItems: !!menuItemMatch,
+        inventory: !!inventoryMatch,
+        tables: !!tableMatch,
+        expenses: !!expenseMatch
+      });
 
       // Process categories
       if (categoryMatch) {
