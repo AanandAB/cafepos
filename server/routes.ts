@@ -26,6 +26,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session store
@@ -1889,6 +1890,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(templates);
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Local CSV restore endpoint
+  app.post('/api/settings/restore', isAuthenticated, hasRole(['admin']), upload.single('backup'), async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No backup file provided' });
+      }
+
+      const csvData = req.file.buffer.toString('utf-8');
+      console.log('Processing CSV restore with data length:', csvData.length);
+
+      const { BackupSystem } = await import('./backup-system');
+      
+      // Parse CSV and restore using the reliable system
+      const structuredBackup = BackupSystem.parseCSVBackup(csvData);
+      const restored = await BackupSystem.restoreBackup(structuredBackup);
+      
+      console.log('Restore completed:', restored);
+      
+      res.json({
+        success: true,
+        message: `Successfully restored backup: ${restored.categories} categories, ${restored.menuItems} menu items, ${restored.inventory} inventory items, ${restored.tables} tables, ${restored.expenses} expenses`,
+        restored
+      });
+    } catch (error) {
+      console.error('CSV restore error:', error);
+      res.status(500).json({ 
+        message: 'Failed to restore backup', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   });
 

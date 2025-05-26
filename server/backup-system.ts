@@ -280,7 +280,7 @@ export class BackupSystem {
   static parseCSVBackup(csvData: string): any {
     console.log('Parsing CSV backup data...');
     
-    const sections = csvData.split(/\n\s*\n/);
+    const lines = csvData.split('\n');
     const data: any = {
       categories: [],
       menuItems: [],
@@ -289,70 +289,97 @@ export class BackupSystem {
       expenses: []
     };
 
-    for (const section of sections) {
-      const lines = section.trim().split('\n');
-      if (lines.length < 2) continue;
+    let currentSection = '';
+    let skipNextLine = false;
 
-      const header = lines[0].trim().toUpperCase();
-      const dataLines = lines.slice(2); // Skip header and column names
-
-      if (header === 'CATEGORIES') {
-        dataLines.forEach(line => {
-          const values = this.parseCSVLine(line);
-          if (values.length >= 1 && values[0]) {
-            data.categories.push({
-              name: values[0],
-              description: values[1] || ''
-            });
-          }
-        });
-      } else if (header === 'MENU ITEMS') {
-        dataLines.forEach(line => {
-          const values = this.parseCSVLine(line);
-          if (values.length >= 6 && values[0]) {
-            data.menuItems.push({
-              name: values[0],
-              description: values[1] || '',
-              price: parseFloat(values[2]) || 0,
-              categoryName: values[3] || 'Hot Beverages',
-              taxRate: parseFloat(values[4]) || 0,
-              available: values[5] === 'true',
-              stockQuantity: parseInt(values[6]) || 0
-            });
-          }
-        });
-      } else if (header === 'INVENTORY') {
-        dataLines.forEach(line => {
-          const values = this.parseCSVLine(line);
-          if (values.length >= 4 && values[0]) {
-            data.inventory.push({
-              name: values[0],
-              quantity: parseFloat(values[1]) || 0,
-              unit: values[2] || 'units',
-              alertThreshold: parseFloat(values[3]) || 0,
-              cost: parseFloat(values[4]) || 0
-            });
-          }
-        });
-      } else if (header === 'TABLES') {
-        dataLines.forEach(line => {
-          const values = this.parseCSVLine(line);
-          if (values.length >= 2 && values[0]) {
-            data.tables.push({
-              name: values[0],
-              capacity: parseInt(values[1]) || 2,
-              occupied: values[2] === 'true'
-            });
-          }
-        });
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Skip empty lines
+      if (!line) continue;
+      
+      // Identify section headers
+      if (line === 'CATEGORIES') {
+        currentSection = 'categories';
+        skipNextLine = true; // Skip the column header line
+        continue;
+      } else if (line === 'MENU ITEMS') {
+        currentSection = 'menuItems';
+        skipNextLine = true;
+        continue;
+      } else if (line === 'INVENTORY') {
+        currentSection = 'inventory';
+        skipNextLine = true;
+        continue;
+      } else if (line === 'TABLES') {
+        currentSection = 'tables';
+        skipNextLine = true;
+        continue;
+      } else if (line === 'EXPENSES') {
+        currentSection = 'expenses';
+        skipNextLine = true;
+        continue;
+      }
+      
+      // Skip column header lines
+      if (skipNextLine) {
+        skipNextLine = false;
+        continue;
+      }
+      
+      // Parse data lines based on current section
+      if (currentSection && line) {
+        const values = this.parseCSVLine(line);
+        
+        if (currentSection === 'categories' && values.length >= 1 && values[0]) {
+          data.categories.push({
+            name: values[0],
+            description: values[1] || ''
+          });
+        } else if (currentSection === 'menuItems' && values.length >= 6 && values[0]) {
+          data.menuItems.push({
+            name: values[0],
+            description: values[1] || '',
+            price: parseFloat(values[2]) || 0,
+            categoryName: values[3] || 'Hot Beverages',
+            taxRate: parseFloat(values[4]) || 0,
+            available: values[5] === 'true',
+            stockQuantity: parseInt(values[6]) || 0
+          });
+        } else if (currentSection === 'inventory' && values.length >= 5 && values[0]) {
+          data.inventory.push({
+            name: values[0],
+            quantity: parseInt(values[1]) || 0,
+            unit: values[2] || '',
+            alertThreshold: parseInt(values[3]) || 0,
+            cost: parseFloat(values[4]) || 0
+          });
+        } else if (currentSection === 'tables' && values.length >= 3 && values[0]) {
+          data.tables.push({
+            name: values[0],
+            capacity: parseInt(values[1]) || 2,
+            occupied: values[2] === 'true'
+          });
+        } else if (currentSection === 'expenses' && values.length >= 4 && values[0]) {
+          data.expenses.push({
+            name: values[0],
+            amount: parseFloat(values[1]) || 0,
+            category: values[2] || 'other',
+            date: values[3] || new Date().toISOString()
+          });
+        }
       }
     }
 
-    return {
-      version: '2.0',
-      timestamp: new Date().toISOString(),
-      data
-    };
+    console.log('Parsed backup data:', {
+      categories: data.categories.length,
+      menuItems: data.menuItems.length,
+      inventory: data.inventory.length,
+      tables: data.tables.length,
+      expenses: data.expenses.length
+    });
+
+    return { data };
   }
 
   private static parseCSVLine(line: string): string[] {
