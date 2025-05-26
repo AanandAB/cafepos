@@ -918,33 +918,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses = await storage.getExpenses();
       }
       
-      // If includeInventory flag is set, add inventory costs as expenses
-      if (includeInventory === 'true') {
-        // Get all inventory items
-        const inventoryItems = await storage.getInventoryItems();
-        
-        // Create virtual expense entries for inventory items only if they have been purchased
-        // Don't show default inventory as expenses until they're actually purchased
-        const inventoryExpenses = inventoryItems
-          .filter(item => item.cost !== null && item.cost > 0 && item.quantity > 0)
-          .filter(item => {
-            // Only show as expense if there are actual expense records or purchases
-            // For now, don't auto-create virtual expenses for default inventory
-            return false; // Disable virtual inventory expenses for cleaner experience
-          })
-          .map(item => ({
-            id: -item.id, // Use negative IDs to avoid conflicts
-            description: `Inventory: ${item.name}`,
-            amount: item.cost ? item.cost * item.quantity : 0,
-            category: 'inventory',
-            userId: 1, // Default to admin user
-            date: new Date(),
-            isInventoryItem: true // Flag to identify inventory items
-          }));
-        
-        // Return combined expenses
-        return res.json([...expenses, ...inventoryExpenses]);
-      }
+      // Note: Removed virtual inventory expenses for cleaner experience
+      // Inventory costs will only appear as expenses when explicitly added as real expenses
       
       // Return just regular expenses
       res.json(expenses);

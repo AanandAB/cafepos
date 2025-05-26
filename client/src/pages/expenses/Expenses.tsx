@@ -99,14 +99,14 @@ export default function Expenses() {
   
   const { toast } = useToast();
   
-  // Fetch expenses data including inventory costs
+  // Fetch expenses data (only real expenses, not inventory costs)
   const { data: expenses = [], isLoading, error } = useQuery({
     queryKey: ['/api/expenses', date?.from?.toISOString(), date?.to?.toISOString()],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (date?.from) params.append('startDate', date.from.toISOString());
       if (date?.to) params.append('endDate', date.to.toISOString());
-      params.append('includeInventory', 'true'); // Request to include inventory costs
+      // Removed includeInventory flag for cleaner experience
       
       const response = await fetch(`/api/expenses?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch expenses');
