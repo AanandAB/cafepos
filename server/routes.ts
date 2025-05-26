@@ -29,6 +29,9 @@ import { Strategy as LocalStrategy } from "passport-local";
 import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup multer for file uploads
+  const upload = multer({ storage: multer.memoryStorage() });
+  
   // Setup session store
   const SessionStore = MemoryStore(session);
   
