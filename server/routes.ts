@@ -1535,7 +1535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Import CSV backup data (for Google Drive restore)
+  // Import CSV backup data (for Google Drive restore) - NEW RELIABLE SYSTEM
   app.post('/api/settings/import-csv-backup', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
     try {
       const { csvData } = req.body;
@@ -1544,69 +1544,279 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'CSV data is required' });
       }
 
-      // Helper function to parse CSV line properly
-      const parseCSVLine = (line: string): string[] => {
-        const result: string[] = [];
-        let current = '';
-        let inQuotes = false;
-        let i = 0;
-        
-        while (i < line.length) {
-          const char = line[i];
-          
-          if (char === '"' && (i === 0 || line[i-1] === ',')) {
-            inQuotes = true;
-          } else if (char === '"' && inQuotes && (i === line.length - 1 || line[i+1] === ',')) {
-            inQuotes = false;
-          } else if (char === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = '';
-          } else {
-            current += char;
-          }
-          i++;
-        }
-        
-        result.push(current.trim());
-        return result;
-      };
-
-      // Note: Using update-or-create logic to prevent duplicates without clearing existing data
-
-      let importedCounts = {
-        categories: 0,
-        menuItems: 0,
-        inventory: 0,
-        tables: 0,
-        expenses: 0
-      };
-
-      // Find sections using simpler approach
-      console.log('CSV Data preview:', csvData.substring(0, 800));
-      console.log('CSV Data length:', csvData.length);
+      const { BackupSystem } = await import('./backup-system');
       
-      // Look for exact section headers
-      const categoryIndex = csvData.indexOf('CATEGORIES\n');
-      const menuItemIndex = csvData.indexOf('MENU ITEMS\n');
-      const inventoryIndex = csvData.indexOf('INVENTORY\n');
-      const tableIndex = csvData.indexOf('TABLES\n');
-      const expenseIndex = csvData.indexOf('EXPENSES\n');
+      // Parse CSV and restore using the new reliable system
+      const structuredBackup = BackupSystem.parseCSVBackup(csvData);
+      const restored = await BackupSystem.restoreBackup(structuredBackup);
       
-      console.log('Section indices:', {
-        categories: categoryIndex,
-        menuItems: menuItemIndex,
-        inventory: inventoryIndex,
-        tables: tableIndex,
-        expenses: expenseIndex
+      res.json({
+        success: true,
+        message: `Successfully restored backup: ${restored.categories} categories, ${restored.menuItems} menu items, ${restored.inventory} inventory items, ${restored.tables} tables, ${restored.expenses} expenses`,
+        restored
       });
+    } catch (error) {
+      console.error('CSV backup restore error:', error);
+      res.status(500).json({ 
+        message: 'Failed to restore CSV backup', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // New reliable export system using BackupSystem
+  app.get('/api/settings/export-structured-backup', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      const { BackupSystem } = await import('./backup-system');
+      const backup = await BackupSystem.createBackup();
+      const csvData = BackupSystem.backupToCSV(backup);
       
-      let categoryData = '';
-      let menuItemData = '';
-      let inventoryData = '';
-      let tableData = '';
-      let expenseData = '';
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=cafe-pos-backup.csv');
+      res.send(csvData);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // User onboarding wizard endpoints
+  app.get('/api/onboarding/status', isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user as any;
+      const [categories, menuItems, tables, inventory] = await Promise.all([
+        storage.getCategories(),
+        storage.getMenuItems(),
+        storage.getTables(),
+        storage.getInventoryItems()
+      ]);
+
+      const onboardingStatus = {
+        businessSetup: false,
+        categoriesCreated: categories.length > 1, // More than default
+        menuItemsAdded: menuItems.length > 4, // More than default
+        tablesConfigured: tables.length > 5, // More than default
+        inventorySetup: inventory.length > 4, // More than default
+        firstOrderPlaced: false, // TODO: Check if any orders exist
+        isComplete: false
+      };
+
+      // Check if business info is setup
+      const settings = await storage.getSettings();
+      const businessName = settings.find(s => s.key === 'business_name');
+      onboardingStatus.businessSetup = businessName?.value !== 'My Cafe';
+
+      // Check if first order was placed
+      const orders = await storage.getOrders();
+      onboardingStatus.firstOrderPlaced = orders.length > 0;
+
+      // Calculate completion
+      const steps = [
+        onboardingStatus.businessSetup,
+        onboardingStatus.categoriesCreated,
+        onboardingStatus.menuItemsAdded,
+        onboardingStatus.tablesConfigured,
+        onboardingStatus.inventorySetup,
+        onboardingStatus.firstOrderPlaced
+      ];
+      const completedSteps = steps.filter(Boolean).length;
+      onboardingStatus.isComplete = completedSteps >= 5; // Allow some flexibility
+
+      res.json({
+        ...onboardingStatus,
+        progress: Math.round((completedSteps / steps.length) * 100),
+        nextStep: getNextOnboardingStep(onboardingStatus),
+        user: {
+          name: user.name,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Complete onboarding step
+  app.post('/api/onboarding/complete-step', isAuthenticated, async (req, res, next) => {
+    try {
+      const { step, data } = req.body;
       
-      // Extract each section
+      switch (step) {
+        case 'business-setup':
+          if (data.businessName) {
+            await storage.createOrUpdateSetting({
+              key: 'business_name',
+              value: data.businessName
+            });
+          }
+          if (data.address) {
+            await storage.createOrUpdateSetting({
+              key: 'business_address',
+              value: data.address
+            });
+          }
+          if (data.phone) {
+            await storage.createOrUpdateSetting({
+              key: 'business_phone',
+              value: data.phone
+            });
+          }
+          break;
+
+        case 'quick-setup':
+          // Create sample data based on cafe type
+          if (data.cafeType) {
+            await createCafeTypeData(data.cafeType, storage);
+          }
+          break;
+
+        default:
+          return res.status(400).json({ message: 'Invalid onboarding step' });
+      }
+
+      res.json({ success: true, message: 'Onboarding step completed successfully' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  function getNextOnboardingStep(status: any): string {
+    if (!status.businessSetup) return 'business-setup';
+    if (!status.categoriesCreated || !status.menuItemsAdded) return 'quick-setup';
+    if (!status.tablesConfigured) return 'tables-setup';
+    if (!status.inventorySetup) return 'inventory-setup';
+    if (!status.firstOrderPlaced) return 'first-order';
+    return 'completed';
+  }
+
+  async function createCafeTypeData(cafeType: string, storage: any) {
+    const cafeTemplates = {
+      'coffee-shop': {
+        categories: [
+          { name: 'Hot Coffee', description: 'Fresh brewed coffee drinks' },
+          { name: 'Cold Coffee', description: 'Iced and cold coffee beverages' },
+          { name: 'Pastries', description: 'Fresh baked goods' },
+          { name: 'Snacks', description: 'Light meals and snacks' }
+        ],
+        menuItems: [
+          { name: 'Espresso', description: 'Strong Italian coffee', price: 60, category: 'Hot Coffee', taxRate: 5 },
+          { name: 'Cappuccino', description: 'Espresso with steamed milk', price: 120, category: 'Hot Coffee', taxRate: 5 },
+          { name: 'Latte', description: 'Smooth coffee with milk', price: 140, category: 'Hot Coffee', taxRate: 5 },
+          { name: 'Iced Coffee', description: 'Cold brewed coffee', price: 100, category: 'Cold Coffee', taxRate: 5 },
+          { name: 'Croissant', description: 'Buttery French pastry', price: 80, category: 'Pastries', taxRate: 18 },
+          { name: 'Sandwich', description: 'Fresh made sandwich', price: 150, category: 'Snacks', taxRate: 5 }
+        ],
+        inventory: [
+          { name: 'Coffee Beans', quantity: 10, unit: 'kg', alertThreshold: 2, cost: 800 },
+          { name: 'Milk', quantity: 20, unit: 'liter', alertThreshold: 5, cost: 60 },
+          { name: 'Sugar', quantity: 5, unit: 'kg', alertThreshold: 1, cost: 40 }
+        ]
+      },
+      'restaurant': {
+        categories: [
+          { name: 'Appetizers', description: 'Starters and small plates' },
+          { name: 'Main Course', description: 'Full meals and entrees' },
+          { name: 'Beverages', description: 'Drinks and refreshments' },
+          { name: 'Desserts', description: 'Sweet treats' }
+        ],
+        menuItems: [
+          { name: 'Spring Rolls', description: 'Crispy vegetable rolls', price: 120, category: 'Appetizers', taxRate: 5 },
+          { name: 'Chicken Curry', description: 'Spicy chicken with rice', price: 250, category: 'Main Course', taxRate: 5 },
+          { name: 'Dal Rice', description: 'Lentils with steamed rice', price: 180, category: 'Main Course', taxRate: 5 },
+          { name: 'Fresh Juice', description: 'Seasonal fruit juice', price: 80, category: 'Beverages', taxRate: 12 },
+          { name: 'Ice Cream', description: 'Vanilla ice cream', price: 60, category: 'Desserts', taxRate: 18 }
+        ],
+        inventory: [
+          { name: 'Rice', quantity: 25, unit: 'kg', alertThreshold: 5, cost: 60 },
+          { name: 'Chicken', quantity: 5, unit: 'kg', alertThreshold: 1, cost: 200 },
+          { name: 'Vegetables', quantity: 10, unit: 'kg', alertThreshold: 2, cost: 50 }
+        ]
+      },
+      'bakery': {
+        categories: [
+          { name: 'Bread', description: 'Fresh baked bread' },
+          { name: 'Cakes', description: 'Celebration cakes' },
+          { name: 'Pastries', description: 'Sweet and savory pastries' },
+          { name: 'Beverages', description: 'Tea and coffee' }
+        ],
+        menuItems: [
+          { name: 'White Bread', description: 'Fresh daily bread', price: 40, category: 'Bread', taxRate: 0 },
+          { name: 'Chocolate Cake', description: 'Rich chocolate cake slice', price: 150, category: 'Cakes', taxRate: 18 },
+          { name: 'Croissant', description: 'Buttery French pastry', price: 60, category: 'Pastries', taxRate: 18 },
+          { name: 'Tea', description: 'Indian masala tea', price: 20, category: 'Beverages', taxRate: 5 },
+          { name: 'Coffee', description: 'Filter coffee', price: 30, category: 'Beverages', taxRate: 5 }
+        ],
+        inventory: [
+          { name: 'Flour', quantity: 50, unit: 'kg', alertThreshold: 10, cost: 30 },
+          { name: 'Sugar', quantity: 20, unit: 'kg', alertThreshold: 5, cost: 40 },
+          { name: 'Butter', quantity: 5, unit: 'kg', alertThreshold: 1, cost: 300 }
+        ]
+      }
+    };
+
+    const template = cafeTemplates[cafeType as keyof typeof cafeTemplates];
+    if (!template) return;
+
+    // Create categories
+    const createdCategories = [];
+    for (const categoryData of template.categories) {
+      const category = await storage.createCategory(categoryData);
+      createdCategories.push(category);
+    }
+
+    // Create menu items
+    for (const itemData of template.menuItems) {
+      const category = createdCategories.find(c => c.name === itemData.category);
+      if (category) {
+        await storage.createMenuItem({
+          name: itemData.name,
+          description: itemData.description,
+          price: itemData.price,
+          categoryId: category.id,
+          taxRate: itemData.taxRate,
+          available: true,
+          stockQuantity: 10
+        });
+      }
+    }
+
+    // Create inventory items
+    for (const inventoryData of template.inventory) {
+      await storage.createInventoryItem(inventoryData);
+    }
+  }
+
+  // Create onboarding wizard frontend component
+  app.get('/api/onboarding/templates', isAuthenticated, async (req, res, next) => {
+    try {
+      const templates = [
+        {
+          id: 'coffee-shop',
+          name: 'Coffee Shop',
+          description: 'Perfect for cafes and coffee houses',
+          features: ['Hot & Cold Coffee', 'Pastries & Snacks', 'Quick Service'],
+          icon: '☕'
+        },
+        {
+          id: 'restaurant',
+          name: 'Restaurant',
+          description: 'Full-service dining establishment',
+          features: ['Multi-course Meals', 'Beverages', 'Table Service'],
+          icon: '🍽️'
+        },
+        {
+          id: 'bakery',
+          name: 'Bakery',
+          description: 'Fresh bread, cakes, and pastries',
+          features: ['Fresh Bread', 'Custom Cakes', 'Tea & Coffee'],
+          icon: '🥖'
+        }
+      ];
+      
+      res.json(templates);
+    } catch (error) {
+      next(error);
+    }
+  });
       if (categoryIndex !== -1) {
         const nextIndex = menuItemIndex !== -1 ? menuItemIndex : csvData.length;
         categoryData = csvData.substring(categoryIndex + 'CATEGORIES\n'.length, nextIndex).trim();
