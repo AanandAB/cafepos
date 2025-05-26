@@ -223,6 +223,98 @@ export default function Settings() {
     // Reset file input
     e.target.value = '';
   };
+
+  // CSV Export functionality
+  const handleExportCSV = async (type: string) => {
+    try {
+      const response = await fetch(`/api/settings/export-csv/${type}`);
+      if (!response.ok) {
+        throw new Error('Failed to export CSV');
+      }
+      
+      // Get the filename from response headers
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition?.split('filename=')[1] || `${type}.csv`;
+      
+      // Create blob and download
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "CSV exported",
+        description: `${type} data has been exported as CSV file`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "Failed to export CSV data",
+      });
+    }
+  };
+
+  // CSV Import functionality
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Determine import type from filename
+    let importType = 'categories';
+    if (file.name.includes('inventory')) importType = 'inventory';
+    else if (file.name.includes('tables')) importType = 'tables';
+    else if (file.name.includes('menu')) importType = 'menu-items';
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const csvData = event.target?.result as string;
+        
+        const response = await fetch(`/api/settings/import-csv/${importType}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ csvData }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to import CSV');
+        }
+        
+        const result = await response.json();
+        
+        toast({
+          title: "CSV imported",
+          description: result.message,
+        });
+        
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/menu-items'] });
+        
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Import failed",
+          description: "Failed to import CSV data. Please check the file format.",
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+    
+    // Reset file input
+    e.target.value = '';
+  };
   
   // Enhanced database reset with automatic backup
   const handleResetDatabase = async () => {
@@ -422,12 +514,87 @@ export default function Settings() {
         </TabsContent>
         
         <TabsContent value="backup" className="space-y-4">
-          {/* Local Backup & Restore */}
+          {/* CSV Backup & Restore */}
           <Card>
             <CardHeader>
-              <CardTitle>Local Backup & Restore</CardTitle>
+              <CardTitle>CSV Backup & Restore</CardTitle>
               <CardDescription>
-                Export your data for backup or import previously exported data
+                Export your café data as CSV files for Excel/Sheets or import bulk data from CSV
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium text-lg">Export Data as CSV</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Download your data in CSV format for use in Excel or Google Sheets
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <Button onClick={() => handleExportCSV('all')} className="w-full">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export Complete Backup (CSV)
+                    </Button>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button onClick={() => handleExportCSV('menu-items')} variant="outline" size="sm">
+                        Menu Items
+                      </Button>
+                      <Button onClick={() => handleExportCSV('inventory')} variant="outline" size="sm">
+                        Inventory
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button onClick={() => handleExportCSV('categories')} variant="outline" size="sm">
+                        Categories
+                      </Button>
+                      <Button onClick={() => handleExportCSV('expenses')} variant="outline" size="sm">
+                        Expenses
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium text-lg">Import from CSV</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Upload CSV files to bulk import data. File name determines import type.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="csv-import" className="text-sm font-medium">Choose CSV File</Label>
+                      <Input
+                        id="csv-import"
+                        type="file"
+                        accept=".csv"
+                        onChange={handleImportCSV}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">Supported Files:</h4>
+                      <ul className="text-xs text-blue-800 space-y-1">
+                        <li>• <strong>categories.csv</strong> - Import categories</li>
+                        <li>• <strong>inventory.csv</strong> - Import inventory items</li>
+                        <li>• <strong>tables.csv</strong> - Import table configuration</li>
+                        <li>• <strong>menu.csv</strong> - Import menu items</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* JSON Backup & Restore */}
+          <Card>
+            <CardHeader>
+              <CardTitle>JSON Backup & Restore</CardTitle>
+              <CardDescription>
+                Complete system backup in JSON format (includes all settings)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -438,11 +605,11 @@ export default function Settings() {
                   onClick={handleExportData}
                 >
                   <DownloadCloud className="mr-2 h-4 w-4" />
-                  Export Data
+                  Export JSON Backup
                 </Button>
                 
                 <div className="flex-1">
-                  <Label htmlFor="import-file" className="mb-2 block">Import Data</Label>
+                  <Label htmlFor="import-file" className="mb-2 block">Import JSON Backup</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       id="import-file"
