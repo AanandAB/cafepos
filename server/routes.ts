@@ -1581,11 +1581,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expenses: 0
       };
 
-      // Split CSV into sections by looking for section headers
-      console.log('CSV Data preview:', csvData.substring(0, 500));
+      // Find sections using simpler approach
+      console.log('CSV Data preview:', csvData.substring(0, 800));
+      console.log('CSV Data length:', csvData.length);
       
-      const sections = csvData.split(/\n\n(?=[A-Z\s]+\n)/);
-      console.log('Found sections:', sections.length);
+      // Look for exact section headers
+      const categoryIndex = csvData.indexOf('CATEGORIES\n');
+      const menuItemIndex = csvData.indexOf('MENU ITEMS\n');
+      const inventoryIndex = csvData.indexOf('INVENTORY\n');
+      const tableIndex = csvData.indexOf('TABLES\n');
+      const expenseIndex = csvData.indexOf('EXPENSES\n');
+      
+      console.log('Section indices:', {
+        categories: categoryIndex,
+        menuItems: menuItemIndex,
+        inventory: inventoryIndex,
+        tables: tableIndex,
+        expenses: expenseIndex
+      });
       
       let categoryData = '';
       let menuItemData = '';
@@ -1593,18 +1606,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let tableData = '';
       let expenseData = '';
       
-      for (const section of sections) {
-        if (section.startsWith('CATEGORIES\n')) {
-          categoryData = section.replace('CATEGORIES\n', '');
-        } else if (section.startsWith('MENU ITEMS\n')) {
-          menuItemData = section.replace('MENU ITEMS\n', '');
-        } else if (section.startsWith('INVENTORY\n')) {
-          inventoryData = section.replace('INVENTORY\n', '');
-        } else if (section.startsWith('TABLES\n')) {
-          tableData = section.replace('TABLES\n', '');
-        } else if (section.startsWith('EXPENSES\n')) {
-          expenseData = section.replace('EXPENSES\n', '');
-        }
+      // Extract each section
+      if (categoryIndex !== -1) {
+        const nextIndex = menuItemIndex !== -1 ? menuItemIndex : csvData.length;
+        categoryData = csvData.substring(categoryIndex + 'CATEGORIES\n'.length, nextIndex).trim();
+      }
+      
+      if (menuItemIndex !== -1) {
+        const nextIndex = inventoryIndex !== -1 ? inventoryIndex : csvData.length;
+        menuItemData = csvData.substring(menuItemIndex + 'MENU ITEMS\n'.length, nextIndex).trim();
+      }
+      
+      if (inventoryIndex !== -1) {
+        const nextIndex = tableIndex !== -1 ? tableIndex : csvData.length;
+        inventoryData = csvData.substring(inventoryIndex + 'INVENTORY\n'.length, nextIndex).trim();
+      }
+      
+      if (tableIndex !== -1) {
+        const nextIndex = expenseIndex !== -1 ? expenseIndex : csvData.length;
+        tableData = csvData.substring(tableIndex + 'TABLES\n'.length, nextIndex).trim();
+      }
+      
+      if (expenseIndex !== -1) {
+        expenseData = csvData.substring(expenseIndex + 'EXPENSES\n'.length).trim();
       }
       
       console.log('Section data found:', {
@@ -1614,6 +1638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tables: !!tableData,
         expenses: !!expenseData
       });
+      
+      console.log('Menu item data preview:', menuItemData.substring(0, 200));
 
       // Process categories
       if (categoryData) {
