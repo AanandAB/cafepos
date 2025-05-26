@@ -224,11 +224,35 @@ export default function BackupRestore() {
     }
   };
 
-  // Handle restore from Google Drive
+  // Handle restore from Google Drive (CSV format)
   const handleRestore = async (fileId: string) => {
     try {
-      const backupData = await restoreFromDrive(fileId);
-      await restoreMutation.mutateAsync(backupData);
+      const csvData = await restoreFromDrive(fileId);
+      
+      // Since we're now using CSV format, we need to send it to a CSV import endpoint
+      const response = await fetch('/api/settings/import-csv-backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ csvData }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to restore CSV data');
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: 'Restore Successful',
+        description: result.message || 'Your data has been restored successfully.',
+      });
+      
+      // Refresh the page to show updated data
+      window.location.reload();
     } catch (error) {
       toast({
         variant: 'destructive',

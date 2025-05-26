@@ -1507,6 +1507,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import CSV backup data (for Google Drive restore)
+  app.post('/api/settings/import-csv-backup', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      const { csvData } = req.body;
+      
+      if (!csvData) {
+        return res.status(400).json({ message: 'CSV data is required' });
+      }
+
+      // Parse the multi-section CSV backup data
+      const sections = csvData.split('=== ').filter((section: string) => section.trim());
+      let importedCounts = {
+        categories: 0,
+        menuItems: 0,
+        inventory: 0,
+        tables: 0,
+        expenses: 0
+      };
+
+      for (const section of sections) {
+        const lines = section.split('\n').filter((line: string) => line.trim());
+        if (lines.length < 2) continue;
+
+        const sectionType = lines[0].replace('===', '').trim();
+        const dataLines = lines.slice(2); // Skip header line
+
+        switch (sectionType) {
+          case 'CATEGORIES':
+            for (const line of dataLines) {
+              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+              if (values.length >= 2) {
+                await storage.createCategory({
+                  name: values[1],
+                  description: values[2] || ''
+                });
+                importedCounts.categories++;
+              }
+            }
+            break;
+
+          case 'MENU ITEMS':
+            for (const line of dataLines) {
+              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+              if (values.length >= 6) {
+                await storage.createMenuItem({
+                  name: values[1],
+                  description: values[2] || '',
+                  price: parseFloat(values[3]) || 0,
+                  categoryId: parseInt(values[4]) || 1,
+                  taxRate: parseFloat(values[5]) || 0,
+                  available: values[6] === 'true',
+                  stockQuantity: parseInt(values[7]) || 0
+                });
+                importedCounts.menuItems++;
+              }
+            }
+            break;
+
+          case 'INVENTORY':
+            for (const line of dataLines) {
+              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+              if (values.length >= 4) {
+                await storage.createInventoryItem({
+                  name: values[1],
+                  quantity: parseFloat(values[2]) || 0,
+                  unit: values[3],
+                  alertThreshold: parseFloat(values[4]) || 0,
+                  cost: parseFloat(values[5]) || 0
+                });
+                importedCounts.inventory++;
+              }
+            }
+            break;
+
+          case 'TABLES':
+            for (const line of dataLines) {
+              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+              if (values.length >= 3) {
+                await storage.createTable({
+                  name: values[1],
+                  capacity: parseInt(values[2]) || 2,
+                  occupied: values[3] === 'true'
+                });
+                importedCounts.tables++;
+              }
+            }
+            break;
+
+          case 'EXPENSES':
+            for (const line of dataLines) {
+              const values = line.split(',').map((v: string) => v.trim().replace(/"/g, ''));
+              if (values.length >= 4) {
+                await storage.createExpense({
+                  description: values[1],
+                  amount: parseFloat(values[2]) || 0,
+                  category: values[3] as any,
+                  date: new Date(values[4]) || new Date(),
+                  notes: values[5] || ''
+                });
+                importedCounts.expenses++;
+              }
+            }
+            break;
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Successfully restored backup: ${importedCounts.categories} categories, ${importedCounts.menuItems} menu items, ${importedCounts.inventory} inventory items, ${importedCounts.tables} tables, ${importedCounts.expenses} expenses`,
+        importedCounts 
+      });
+    } catch (error) {
+      console.error('CSV backup restore error:', error);
+      res.status(500).json({ 
+        message: 'Failed to restore CSV backup', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // Import CSV data
   app.post('/api/settings/import-csv/:type', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
     try {
