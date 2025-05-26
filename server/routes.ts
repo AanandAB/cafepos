@@ -26,12 +26,8 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup multer for file uploads
-  const upload = multer({ storage: multer.memoryStorage() });
-  
   // Setup session store
   const SessionStore = MemoryStore(session);
   
@@ -1893,121 +1889,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(templates);
     } catch (error) {
       next(error);
-    }
-  });
-
-  // Local CSV restore endpoint
-  app.post('/api/settings/restore', isAuthenticated, hasRole(['admin']), upload.single('backup'), async (req, res, next) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: 'No backup file provided' });
-      }
-
-      const csvData = req.file.buffer.toString('utf-8');
-      console.log('Processing CSV restore with data length:', csvData.length);
-
-      const { BackupSystem } = await import('./backup-system');
-      
-      // Parse CSV and restore using the reliable system
-      const structuredBackup = BackupSystem.parseCSVBackup(csvData);
-      const restored = await BackupSystem.restoreBackup(structuredBackup);
-      
-      console.log('Restore completed:', restored);
-      
-      res.json({
-        success: true,
-        message: `Successfully restored backup: ${restored.categories} categories, ${restored.menuItems} menu items, ${restored.inventory} inventory items, ${restored.tables} tables, ${restored.expenses} expenses`,
-        restored
-      });
-    } catch (error) {
-      console.error('CSV restore error:', error);
-      res.status(500).json({ 
-        message: 'Failed to restore backup', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-    }
-  });
-
-  // Google Drive backup endpoint
-  app.post('/api/settings/google-drive-backup', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
-    try {
-      // Generate backup data
-      const categories = await storage.getCategories();
-      const menuItems = await storage.getMenuItems();
-      const inventory = await storage.getInventoryItems();
-      const tables = await storage.getTables();
-      const expenses = await storage.getExpenses();
-      
-      const { BackupSystem } = await import('./backup-system');
-      
-      // Create structured backup
-      const backupData = {
-        version: '2.0',
-        timestamp: new Date().toISOString(),
-        data: {
-          categories,
-          menuItems,
-          inventory,
-          tables,
-          expenses
-        }
-      };
-      
-      // Convert to CSV format
-      const csvData = BackupSystem.backupToCSV(backupData);
-      const fileName = `cafe-backup-${new Date().toISOString().split('T')[0]}.csv`;
-      
-      // Note: This is a simplified implementation that returns the CSV data
-      // The actual Google Drive upload would need to be handled on the frontend
-      // with proper authentication tokens
-      
-      res.json({
-        success: true,
-        message: 'Backup data prepared for Google Drive upload',
-        fileName,
-        csvData // Frontend will handle the actual Google Drive upload
-      });
-    } catch (error) {
-      console.error('Google Drive backup preparation error:', error);
-      res.status(500).json({ 
-        message: 'Failed to prepare Google Drive backup', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-    }
-  });
-
-  // Google Drive restore endpoint
-  app.post('/api/settings/google-drive-restore', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
-    try {
-      // Note: This endpoint expects the CSV data to be provided by the frontend
-      // after downloading from Google Drive
-      const { csvData } = req.body;
-      
-      if (!csvData) {
-        return res.status(400).json({ 
-          message: 'No CSV data provided. Please download backup from Google Drive first.' 
-        });
-      }
-
-      const { BackupSystem } = await import('./backup-system');
-      
-      // Parse CSV and restore using the reliable system
-      const structuredBackup = BackupSystem.parseCSVBackup(csvData);
-      const restored = await BackupSystem.restoreBackup(structuredBackup);
-      
-      console.log('Google Drive restore completed:', restored);
-      
-      res.json({
-        success: true,
-        message: `Successfully restored from Google Drive: ${restored.categories} categories, ${restored.menuItems} menu items, ${restored.inventory} inventory items, ${restored.tables} tables, ${restored.expenses} expenses`,
-        restored
-      });
-    } catch (error) {
-      console.error('Google Drive restore error:', error);
-      res.status(500).json({ 
-        message: 'Failed to restore from Google Drive', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
     }
   });
 

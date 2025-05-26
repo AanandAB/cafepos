@@ -68,27 +68,13 @@ export default function BackupRestore() {
     setBackupProgress(0);
     
     try {
-      // Step 1: Get backup data from server
       const response = await fetch('/api/settings/google-drive-backup', {
         method: 'POST',
       });
       
-      if (!response.ok) throw new Error('Failed to prepare backup data');
+      if (!response.ok) throw new Error('Google Drive backup failed');
       
       const result = await response.json();
-      setBackupProgress(50);
-      
-      // Step 2: Upload to Google Drive using the Google Drive service
-      const { backupToDrive } = await import('@/lib/googleDriveService');
-      
-      // Create a structured backup object that the Google Drive service expects
-      const backupData = {
-        csvData: result.csvData,
-        fileName: result.fileName
-      };
-      
-      await backupToDrive(backupData, result.fileName);
-      setBackupProgress(100);
       setLastBackup(new Date().toLocaleString());
       
       toast({
@@ -99,7 +85,7 @@ export default function BackupRestore() {
       console.error('Google Drive backup failed:', error);
       toast({
         title: "Google Drive Backup Failed",
-        description: error instanceof Error ? error.message : "Please check your Google Drive connection and try again.",
+        description: "Please check your Google Drive connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -208,47 +194,16 @@ export default function BackupRestore() {
     setRestoreProgress(0);
     
     try {
-      // Step 1: Fetch backups from Google Drive
-      const { fetchBackupsFromDrive, restoreFromDrive } = await import('@/lib/googleDriveService');
-      
-      const backups = await fetchBackupsFromDrive();
-      setRestoreProgress(25);
-      
-      if (backups.length === 0) {
-        throw new Error('No backup files found in Google Drive');
-      }
-      
-      // Use the most recent backup file
-      const latestBackup = backups.sort((a, b) => 
-        new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
-      )[0];
-      
-      setRestoreProgress(50);
-      
-      // Step 2: Download backup data from Google Drive
-      const csvData = await restoreFromDrive(latestBackup.id);
-      setRestoreProgress(75);
-      
-      // Step 3: Send CSV data to server for restoration
       const response = await fetch('/api/settings/google-drive-restore', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ csvData }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Google Drive restore failed');
-      }
+      if (!response.ok) throw new Error('Google Drive restore failed');
       
-      const result = await response.json();
       setRestoreProgress(100);
-      
       toast({
         title: "Google Drive Restore Complete",
-        description: result.message || "Your data has been restored from Google Drive successfully.",
+        description: "Your data has been restored from Google Drive successfully.",
       });
       
       // Refresh the page to reload data
@@ -260,7 +215,7 @@ export default function BackupRestore() {
       console.error('Google Drive restore failed:', error);
       toast({
         title: "Google Drive Restore Failed",
-        description: error instanceof Error ? error.message : "Please check your Google Drive connection and try again.",
+        description: "Please check your Google Drive connection and try again.",
         variant: "destructive",
       });
     } finally {
