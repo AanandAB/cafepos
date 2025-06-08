@@ -65,7 +65,7 @@ export default function BackupRestore() {
 
   const handleGoogleDriveBackup = async () => {
     setIsBackingUp(true);
-    setBackupProgress(0);
+    setBackupProgress(25);
     
     try {
       const response = await fetch('/api/settings/google-drive-backup', {
@@ -75,17 +75,31 @@ export default function BackupRestore() {
       if (!response.ok) throw new Error('Google Drive backup failed');
       
       const result = await response.json();
+      setBackupProgress(75);
+      
+      // Download the CSV data as a file
+      const blob = new Blob([result.csvData], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setBackupProgress(100);
       setLastBackup(new Date().toLocaleString());
       
       toast({
-        title: "Google Drive Backup Complete",
-        description: `Backup saved to Google Drive: ${result.fileName}`,
+        title: "Backup Complete",
+        description: `Backup downloaded: ${result.fileName} (${Math.round(result.size / 1024)} KB)`,
       });
     } catch (error) {
       console.error('Google Drive backup failed:', error);
       toast({
-        title: "Google Drive Backup Failed",
-        description: "Please check your Google Drive connection and try again.",
+        title: "Backup Failed",
+        description: "Failed to create backup. Please try again.",
         variant: "destructive",
       });
     } finally {
