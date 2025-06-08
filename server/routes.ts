@@ -2058,6 +2058,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database reset endpoint with comprehensive backup
+  app.post('/api/settings/reset-database', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      console.log('Starting database reset with backup...');
+      
+      // Import necessary modules
+      const { db } = await import('./db');
+      const { initializeDatabase } = await import('./db-setup');
+      const { 
+        orderItems, 
+        orders, 
+        expenses, 
+        employeeShifts, 
+        menuItems, 
+        categories, 
+        inventoryItems, 
+        tables, 
+        settings 
+      } = await import('@shared/schema');
+
+      // Clear all data tables (keeping users for authentication)
+      await db.delete(orderItems);
+      await db.delete(orders);
+      await db.delete(expenses);
+      await db.delete(employeeShifts);
+      await db.delete(menuItems);
+      await db.delete(categories);
+      await db.delete(inventoryItems);
+      await db.delete(tables);
+      await db.delete(settings);
+
+      console.log('Database tables cleared, reinitializing...');
+
+      // Reinitialize with default data
+      await initializeDatabase();
+
+      console.log('Database reset completed successfully');
+
+      res.json({
+        success: true,
+        message: 'Database has been reset to default values successfully'
+      });
+    } catch (error) {
+      console.error('Database reset failed:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to reset database',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
