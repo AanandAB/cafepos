@@ -1663,6 +1663,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-backup settings endpoint
+  app.post('/api/settings/auto-backup', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+    try {
+      const { enabled, frequency } = req.body;
+      
+      // Save auto-backup settings
+      await storage.createOrUpdateSetting({
+        key: 'auto_backup_enabled',
+        value: enabled.toString()
+      });
+      
+      await storage.createOrUpdateSetting({
+        key: 'auto_backup_frequency',
+        value: frequency
+      });
+      
+      res.json({ 
+        success: true, 
+        message: enabled 
+          ? `Auto-backup enabled with ${frequency} frequency` 
+          : 'Auto-backup disabled'
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // User onboarding wizard endpoints
   app.get('/api/onboarding/status', isAuthenticated, async (req, res, next) => {
     try {
