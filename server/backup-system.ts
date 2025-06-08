@@ -18,18 +18,54 @@ export class BackupSystem {
       storage.getOrders()
     ]);
 
-    // Get order items for each order
+    // Get order items for each order with detailed sales information
     const orderItems = [];
+    const salesTransactions = [];
+    
     for (const order of orders) {
       const items = await storage.getOrderItemsByOrder(order.id);
+      
+      // Add order items to backup
       orderItems.push(...items.map(item => ({
         ...item,
         orderId: order.id
       })));
+
+      // Create detailed sales transaction records
+      for (const item of items) {
+        const menuItem = menuItems.find(m => m.id === item.menuItemId);
+        const category = categories.find(c => c.id === menuItem?.categoryId);
+        
+        salesTransactions.push({
+          orderId: order.id,
+          orderDate: order.createdAt,
+          completedAt: order.completedAt,
+          tableId: order.tableId,
+          tableName: `T${order.tableId}`,
+          customerName: order.customerName || 'Walk-in',
+          customerPhone: order.customerPhone || '',
+          menuItemId: item.menuItemId,
+          menuItemName: menuItem?.name || 'Unknown Item',
+          categoryName: category?.name || 'Unknown Category',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          taxRate: menuItem?.taxRate || 0,
+          taxAmount: (item.totalPrice * (menuItem?.taxRate || 0)) / 100,
+          orderTotal: order.totalAmount,
+          orderTaxAmount: order.taxAmount || 0,
+          orderDiscount: order.discount || 0,
+          paymentMethod: order.paymentMethod,
+          orderStatus: order.status,
+          invoiceNumber: order.invoiceNumber || '',
+          itemNotes: item.notes || '',
+          orderNotes: order.customerName || ''
+        });
+      }
     }
 
     const backup = {
-      version: '3.0',
+      version: '3.1',
       timestamp: new Date().toISOString(),
       data: {
         categories: categories.map(cat => ({
@@ -84,10 +120,15 @@ export class BackupSystem {
           tableId: order.tableId,
           status: order.status,
           totalAmount: order.totalAmount,
+          taxAmount: order.taxAmount || 0,
+          discount: order.discount || 0,
           paymentMethod: order.paymentMethod,
           customerName: order.customerName || '',
           customerPhone: order.customerPhone || '',
-          createdAt: order.createdAt
+          customerGstin: order.customerGstin || '',
+          invoiceNumber: order.invoiceNumber || '',
+          createdAt: order.createdAt,
+          completedAt: order.completedAt
         })),
         orderItems: orderItems.map(item => ({
           orderId: item.orderId,
@@ -96,7 +137,8 @@ export class BackupSystem {
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
           notes: item.notes || ''
-        }))
+        })),
+        salesTransactions: salesTransactions
       }
     };
 
@@ -458,6 +500,51 @@ export class BackupSystem {
       csv += '\n';
     }
 
+    // Orders section  
+    if (backup.data.orders?.length > 0) {
+      csv += 'ORDERS\n';
+      csv += 'ID,Table ID,Status,Total Amount,Tax Amount,Discount,Payment Method,Customer Name,Customer Phone,Invoice Number,Created At,Completed At\n';
+      backup.data.orders.forEach((order: any) => {
+        const customerName = (order.customerName || '').replace(/"/g, '""');
+        const customerPhone = (order.customerPhone || '').replace(/"/g, '""');
+        const invoiceNumber = (order.invoiceNumber || '').replace(/"/g, '""');
+        const paymentMethod = (order.paymentMethod || '').replace(/"/g, '""');
+        csv += `${order.id},${order.tableId},"${order.status}",${order.totalAmount},${order.taxAmount},${order.discount},"${paymentMethod}","${customerName}","${customerPhone}","${invoiceNumber}","${order.createdAt}","${order.completedAt || ''}"\n`;
+      });
+      csv += '\n';
+    }
+
+    // Order Items section
+    if (backup.data.orderItems?.length > 0) {
+      csv += 'ORDER ITEMS\n';
+      csv += 'Order ID,Menu Item ID,Quantity,Unit Price,Total Price,Notes\n';
+      backup.data.orderItems.forEach((item: any) => {
+        const notes = (item.notes || '').replace(/"/g, '""');
+        csv += `${item.orderId},${item.menuItemId},${item.quantity},${item.unitPrice},${item.totalPrice},"${notes}"\n`;
+      });
+      csv += '\n';
+    }
+
+    // Sales Transactions section (detailed sales history)
+    if (backup.data.salesTransactions?.length > 0) {
+      csv += 'SALES TRANSACTIONS\n';
+      csv += 'Order ID,Order Date,Completed At,Table ID,Table Name,Customer Name,Customer Phone,Menu Item ID,Menu Item Name,Category Name,Quantity,Unit Price,Total Price,Tax Rate,Tax Amount,Order Total,Order Tax Amount,Order Discount,Payment Method,Order Status,Invoice Number,Item Notes,Order Notes\n';
+      backup.data.salesTransactions.forEach((transaction: any) => {
+        const customerName = (transaction.customerName || '').replace(/"/g, '""');
+        const customerPhone = (transaction.customerPhone || '').replace(/"/g, '""');
+        const menuItemName = (transaction.menuItemName || '').replace(/"/g, '""');
+        const categoryName = (transaction.categoryName || '').replace(/"/g, '""');
+        const tableName = (transaction.tableName || '').replace(/"/g, '""');
+        const paymentMethod = (transaction.paymentMethod || '').replace(/"/g, '""');
+        const invoiceNumber = (transaction.invoiceNumber || '').replace(/"/g, '""');
+        const itemNotes = (transaction.itemNotes || '').replace(/"/g, '""');
+        const orderNotes = (transaction.orderNotes || '').replace(/"/g, '""');
+        
+        csv += `${transaction.orderId},"${transaction.orderDate}","${transaction.completedAt || ''}",${transaction.tableId},"${tableName}","${customerName}","${customerPhone}",${transaction.menuItemId},"${menuItemName}","${categoryName}",${transaction.quantity},${transaction.unitPrice},${transaction.totalPrice},${transaction.taxRate}%,${transaction.taxAmount.toFixed(2)},${transaction.orderTotal},${transaction.orderTaxAmount},${transaction.orderDiscount},"${paymentMethod}","${transaction.orderStatus}","${invoiceNumber}","${itemNotes}","${orderNotes}"\n`;
+      });
+      csv += '\n';
+    }
+
     return csv;
   }
 
@@ -473,7 +560,10 @@ export class BackupSystem {
       tables: [],
       expenses: [],
       settings: [],
-      users: []
+      users: [],
+      orders: [],
+      orderItems: [],
+      salesTransactions: []
     };
 
     for (const section of sections) {
@@ -569,6 +659,71 @@ export class BackupSystem {
               category: values[3] || 'other',
               date: values[4],
               notes: values[5] || ''
+            });
+          }
+        });
+      } else if (header === 'ORDERS') {
+        dataLines.forEach(line => {
+          const values = this.parseCSVLine(line);
+          if (values.length >= 7 && values[0]) {
+            data.orders.push({
+              id: parseInt(values[0]) || null,
+              tableId: parseInt(values[1]) || null,
+              status: values[2] || 'pending',
+              totalAmount: parseFloat(values[3]) || 0,
+              taxAmount: parseFloat(values[4]) || 0,
+              discount: parseFloat(values[5]) || 0,
+              paymentMethod: values[6] || 'cash',
+              customerName: values[7] || '',
+              customerPhone: values[8] || '',
+              invoiceNumber: values[9] || '',
+              createdAt: values[10] || new Date().toISOString(),
+              completedAt: values[11] || null
+            });
+          }
+        });
+      } else if (header === 'ORDER ITEMS') {
+        dataLines.forEach(line => {
+          const values = this.parseCSVLine(line);
+          if (values.length >= 5 && values[0]) {
+            data.orderItems.push({
+              orderId: parseInt(values[0]) || null,
+              menuItemId: parseInt(values[1]) || null,
+              quantity: parseInt(values[2]) || 1,
+              unitPrice: parseFloat(values[3]) || 0,
+              totalPrice: parseFloat(values[4]) || 0,
+              notes: values[5] || ''
+            });
+          }
+        });
+      } else if (header === 'SALES TRANSACTIONS') {
+        dataLines.forEach(line => {
+          const values = this.parseCSVLine(line);
+          if (values.length >= 15 && values[0]) {
+            data.salesTransactions.push({
+              orderId: parseInt(values[0]) || null,
+              orderDate: values[1] || new Date().toISOString(),
+              completedAt: values[2] || null,
+              tableId: parseInt(values[3]) || null,
+              tableName: values[4] || '',
+              customerName: values[5] || '',
+              customerPhone: values[6] || '',
+              menuItemId: parseInt(values[7]) || null,
+              menuItemName: values[8] || '',
+              categoryName: values[9] || '',
+              quantity: parseInt(values[10]) || 1,
+              unitPrice: parseFloat(values[11]) || 0,
+              totalPrice: parseFloat(values[12]) || 0,
+              taxRate: parseFloat(values[13]?.replace('%', '')) || 0,
+              taxAmount: parseFloat(values[14]) || 0,
+              orderTotal: parseFloat(values[15]) || 0,
+              orderTaxAmount: parseFloat(values[16]) || 0,
+              orderDiscount: parseFloat(values[17]) || 0,
+              paymentMethod: values[18] || 'cash',
+              orderStatus: values[19] || 'completed',
+              invoiceNumber: values[20] || '',
+              itemNotes: values[21] || '',
+              orderNotes: values[22] || ''
             });
           }
         });
