@@ -204,20 +204,39 @@ export default function BackupRestore() {
   };
 
   const handleGoogleDriveRestore = async () => {
+    if (!restoreFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a backup file first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRestoring(true);
-    setRestoreProgress(0);
+    setRestoreProgress(25);
     
     try {
+      // Read the CSV file content
+      const csvData = await restoreFile.text();
+      setRestoreProgress(50);
+      
       const response = await fetch('/api/settings/google-drive-restore', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ csvData }),
       });
       
-      if (!response.ok) throw new Error('Google Drive restore failed');
+      if (!response.ok) throw new Error('Restore failed');
       
+      const result = await response.json();
       setRestoreProgress(100);
+      
       toast({
-        title: "Google Drive Restore Complete",
-        description: "Your data has been restored from Google Drive successfully.",
+        title: "Restore Complete",
+        description: result.message,
       });
       
       // Refresh the page to reload data
@@ -226,10 +245,10 @@ export default function BackupRestore() {
       }, 2000);
       
     } catch (error) {
-      console.error('Google Drive restore failed:', error);
+      console.error('Restore failed:', error);
       toast({
-        title: "Google Drive Restore Failed",
-        description: "Please check your Google Drive connection and try again.",
+        title: "Restore Failed",
+        description: "Failed to restore data. Please check your backup file.",
         variant: "destructive",
       });
     } finally {
