@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Test - Café Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .info { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body>
+    <h1>Mobile Testing for Café Management System</h1>
+    
+    <div class="test-container">
+        <h2>Touch Target Testing</h2>
+        <p>All buttons should be at least 44px for proper touch interaction:</p>
+        <button class="test-button" onclick="testTouch('small')">Small Button</button>
+        <button class="test-button" onclick="testTouch('medium')" style="padding: 16px 32px;">Medium Button</button>
+        <button class="test-button" onclick="testTouch('large')" style="padding: 20px 40px;">Large Button</button>
+        <div id="touch-result" class="status info">Tap buttons to test touch responsiveness</div>
+    </div>
+
+    <div class="test-container">
+        <h2>Form Input Testing</h2>
+        <p>Test various input types on mobile:</p>
+        <input type="text" class="test-input" placeholder="Text input" />
+        <input type="number" class="test-input" placeholder="Number input (should show numeric keypad)" />
+        <input type="email" class="test-input" placeholder="Email input" />
+        <input type="tel" class="test-input" placeholder="Phone input" />
+        <textarea class="test-input" placeholder="Textarea" rows="3"></textarea>
+        <div id="input-result" class="status info">Test inputs with virtual keyboard</div>
+    </div>
+
+    <div class="test-container">
+        <h2>API Connection Test</h2>
+        <p>Test connection to your café management system:</p>
+        <button class="test-button" onclick="testAPI()">Test API Connection</button>
+        <div id="api-result" class="status info">Click to test API connectivity</div>
+    </div>
+
+    <div class="test-container">
+        <h2>Screen Size Detection</h2>
+        <div id="screen-info" class="status info"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Device Features</h2>
+        <div id="device-info" class="status info"></div>
+    </div>
+
+    <script>
+        // Touch testing
+        function testTouch(size) {
+            const result = document.getElementById('touch-result');
+            result.textContent = `${size} button touched successfully! Touch registered.`;
+            result.className = 'status success';
+            
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        // API testing
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            result.textContent = 'Testing API connection...';
+            result.className = 'status info';
+            
+            try {
+                // Test the actual API endpoint
+                const response = await fetch('/api/auth/user');
+                if (response.ok || response.status === 401) {
+                    result.textContent = 'API connection successful! Café system is reachable.';
+                    result.className = 'status success';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                result.textContent = `API connection failed: ${error.message}`;
+                result.className = 'status error';
+            }
+        }
+
+        // Screen size detection
+        function updateScreenInfo() {
+            const screenInfo = document.getElementById('screen-info');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            
+            let deviceType = 'Desktop';
+            if (width <= 480) deviceType = 'Mobile Phone';
+            else if (width <= 768) deviceType = 'Tablet Portrait';
+            else if (width <= 1024) deviceType = 'Tablet Landscape';
+            
+            screenInfo.innerHTML = `
+                <strong>Screen Information:</strong><br>
+                Device Type: ${deviceType}<br>
+                Screen Size: ${width} x ${height}px<br>
+                Device Pixel Ratio: ${devicePixelRatio}<br>
+                Orientation: ${width > height ? 'Landscape' : 'Portrait'}
+            `;
+        }
+
+        // Device features detection
+        function updateDeviceInfo() {
+            const deviceInfo = document.getElementById('device-info');
+            const features = [];
+            
+            if ('ontouchstart' in window) features.push('Touch Screen');
+            if (navigator.vibrate) features.push('Vibration');
+            if (navigator.geolocation) features.push('Geolocation');
+            if ('serviceWorker' in navigator) features.push('Service Worker');
+            if (navigator.onLine !== undefined) features.push(`Network: ${navigator.onLine ? 'Online' : 'Offline'}`);
+            
+            deviceInfo.innerHTML = `
+                <strong>Device Features:</strong><br>
+                ${features.join('<br>')}
+            `;
+        }
+
+        // Initialize
+        updateScreenInfo();
+        updateDeviceInfo();
+        
+        // Update on resize
+        window.addEventListener('resize', updateScreenInfo);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateScreenInfo, 100);
+        });
+    </script>
+</body>
+</html>
