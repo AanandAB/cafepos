@@ -6,22 +6,28 @@ export class BackupSystem {
     try {
       console.log('Creating comprehensive backup...');
       
-      const [categories, menuItems, inventory, tables, orders, orderItems, expenses, settings, users] = await Promise.all([
+      const [categories, menuItems, inventory, tables, orders, expenses, settings, users] = await Promise.all([
         storage.getCategories(),
         storage.getMenuItems(),
         storage.getInventoryItems(),
         storage.getTables(),
         storage.getOrders(),
-        db.query('SELECT * FROM order_items'),
         storage.getExpenses(),
         storage.getSettings(),
         storage.getUsers()
       ]);
 
+      // Get all order items
+      const orderItems = [];
+      for (const order of orders) {
+        const items = await storage.getOrderItemsByOrder(order.id);
+        orderItems.push(...items);
+      }
+
       // Create sales transactions for comprehensive reporting
       const salesTransactions = [];
       for (const order of orders) {
-        const items = orderItems.rows.filter((item: any) => item.orderId === order.id);
+        const items = orderItems.filter((item: any) => item.orderId === order.id);
         for (const item of items) {
           const menuItem = menuItems.find(m => m.id === item.menuItemId);
           const category = categories.find(c => c.id === menuItem?.categoryId);
@@ -50,7 +56,7 @@ export class BackupSystem {
             orderStatus: order.status,
             invoiceNumber: order.invoiceNumber || '',
             itemNotes: item.notes || '',
-            orderNotes: order.notes || ''
+            orderNotes: order.customerName || ''
           });
         }
       }
@@ -120,7 +126,7 @@ export class BackupSystem {
             createdAt: order.createdAt,
             completedAt: order.completedAt || ''
           })),
-          orderItems: orderItems.rows.map((item: any) => ({
+          orderItems: orderItems.map((item: any) => ({
             orderId: item.orderId,
             menuItemId: item.menuItemId,
             quantity: item.quantity,
