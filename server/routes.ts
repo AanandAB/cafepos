@@ -790,10 +790,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Employee Shift routes
-  app.get('/api/shifts', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+  app.get('/api/shifts', isAuthenticated, async (req, res, next) => {
     try {
+      const user = req.user as any;
       const shifts = await storage.getActiveEmployeeShifts();
-      res.json(shifts);
+      
+      // Staff can only see basic shift information, not sensitive details
+      if (user.role === 'staff') {
+        const filteredShifts = shifts.map(shift => ({
+          id: shift.id,
+          userId: shift.userId,
+          clockIn: shift.clockIn,
+          clockOut: shift.clockOut
+        }));
+        res.json(filteredShifts);
+      } else {
+        // Admin and manager get full access
+        res.json(shifts);
+      }
     } catch (error) {
       next(error);
     }
