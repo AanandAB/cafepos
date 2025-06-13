@@ -20,8 +20,11 @@ import {
   tables,
   orders,
   orderItems,
-  expenses
+  expenses,
+  employeeShifts,
+  users
 } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";
@@ -789,24 +792,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Employee Shift routes
+  // Employee Shift routes - Get active shifts with employee names
   app.get('/api/shifts', isAuthenticated, async (req, res, next) => {
     try {
       const user = req.user as any;
-      const shifts = await storage.getActiveEmployeeShifts();
+      
+      // Get active shifts with user information using a direct query
+      const result = await db
+        .select({
+          id: employeeShifts.id,
+          userId: employeeShifts.userId,
+          clockIn: employeeShifts.clockIn,
+          clockOut: employeeShifts.clockOut,
+          user: {
+            id: users.id,
+            name: users.name,
+            role: users.role
+          }
+        })
+        .from(employeeShifts)
+        .leftJoin(users, eq(employeeShifts.userId, users.id))
+        .where(eq(employeeShifts.clockOut, null))
+        .orderBy(desc(employeeShifts.clockIn));
       
       // Staff can only see basic shift information, not sensitive details
       if (user.role === 'staff') {
-        const filteredShifts = shifts.map(shift => ({
+        const filteredShifts = result.map(shift => ({
           id: shift.id,
           userId: shift.userId,
           clockIn: shift.clockIn,
-          clockOut: shift.clockOut
+          clockOut: shift.clockOut,
+          user: shift.user ? { name: shift.user.name } : null
         }));
         res.json(filteredShifts);
       } else {
         // Admin and manager get full access
-        res.json(shifts);
+        res.json(result);
       }
     } catch (error) {
       next(error);
@@ -889,6 +910,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedShift = await storage.updateEmployeeShift(id, { clockOut: new Date() });
       res.json(updatedShift);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Admin/Manager endpoint to clock out any employee
+  app.post('/api/shifts/admin-clock-out/:id', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const shift = await storage.getEmployeeShift(id);
+      
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      if (shift.clockOut !== null) {
+        return res.status(400).json({ message: "Shift already clocked out" });
+      }
+      
+      const updatedShift = await storage.updateEmployeeShift(id, { clockOut: new Date() });
+      res.json(updatedShift);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get shift history with employee names
+  app.get('/api/shifts/history', isAuthenticated, async (req, res, next) => {
+    try {
+      const { limit = 50 } = req.query;
+      
+      // Get shifts with user information using a direct query
+      const result = await db
+        .select({
+          id: employeeShifts.id,
+          userId: employeeShifts.userId,
+          clockIn: employeeShifts.clockIn,
+          clockOut: employeeShifts.clockOut,
+          user: {
+            id: users.id,
+            name: users.name,
+            role: users.role
+          }
+        })
+        .from(employeeShifts)
+        .leftJoin(users, eq(employeeShifts.userId, users.id))
+        .orderBy(desc(employeeShifts.clockIn))
+        .limit(parseInt(limit as string));
+      
+      res.json(result);
     } catch (error) {
       next(error);
     }
