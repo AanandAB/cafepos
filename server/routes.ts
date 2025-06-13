@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { limit = 50 } = req.query;
       
       // Get all shifts with user information, including completed ones
-      const shifts = await storage.getEmployeeShiftsByUser(0); // Get all shifts
+      const shifts = await storage.getAllEmployeeShifts();
       
       // Get user information for each shift
       const shiftsWithUsers = await Promise.all(

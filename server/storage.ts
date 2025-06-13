@@ -70,6 +70,7 @@ export interface IStorage {
   // EmployeeShift methods
   getEmployeeShift(id: number): Promise<EmployeeShift | undefined>;
   getEmployeeShiftsByUser(userId: number): Promise<EmployeeShift[]>;
+  getAllEmployeeShifts(): Promise<EmployeeShift[]>;
   getActiveEmployeeShifts(): Promise<EmployeeShift[]>;
   createEmployeeShift(shift: InsertEmployeeShift): Promise<EmployeeShift>;
   updateEmployeeShift(id: number, shift: Partial<InsertEmployeeShift>): Promise<EmployeeShift | undefined>;
@@ -465,6 +466,10 @@ export class DatabaseStorage implements IStorage {
 
   async getEmployeeShiftsByUser(userId: number): Promise<EmployeeShift[]> {
     return db.select().from(employeeShifts).where(eq(employeeShifts.userId, userId));
+  }
+
+  async getAllEmployeeShifts(): Promise<EmployeeShift[]> {
+    return db.select().from(employeeShifts).orderBy(desc(employeeShifts.clockIn));
   }
 
   async getActiveEmployeeShifts(): Promise<EmployeeShift[]> {
