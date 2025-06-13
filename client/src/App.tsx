@@ -21,6 +21,7 @@ import Expenses from "@/pages/expenses/Expenses";
 import ShiftManagement from "@/pages/shifts/ShiftManagement";
 import TableManagement from "@/pages/tables/TableManagement";
 import Sidebar from "@/components/layout/Sidebar";
+import MobileSidebar from "@/components/layout/MobileSidebar";
 import Header from "@/components/layout/Header";
 
 // Protected route wrapper component
@@ -63,13 +64,25 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return <>{children}</>;
   
   return (
-    <div className="h-screen flex flex-col md:flex-row">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col">
+      {/* Mobile layout */}
+      <div className="md:hidden">
+        <MobileSidebar />
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 overflow-y-auto p-4 pt-16 bg-gray-50 dark:bg-gray-900">
           {children}
         </main>
+      </div>
+      
+      {/* Desktop layout */}
+      <div className="hidden md:flex md:flex-row h-full">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

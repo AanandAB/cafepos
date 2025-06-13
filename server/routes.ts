@@ -24,7 +24,7 @@ import {
   employeeShifts,
   users
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, isNotNull } from "drizzle-orm";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";
@@ -948,18 +948,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: employeeShifts.userId,
           clockIn: employeeShifts.clockIn,
           clockOut: employeeShifts.clockOut,
-          user: {
-            id: users.id,
-            name: users.name,
-            role: users.role
-          }
+          userName: users.name,
+          userRole: users.role
         })
         .from(employeeShifts)
         .leftJoin(users, eq(employeeShifts.userId, users.id))
+        .where(isNotNull(employeeShifts.clockOut))
         .orderBy(desc(employeeShifts.clockIn))
         .limit(parseInt(limit as string));
       
-      res.json(result);
+      // Format the response to include user object for frontend compatibility
+      const formattedResult = result.map(shift => ({
+        id: shift.id,
+        userId: shift.userId,
+        clockIn: shift.clockIn,
+        clockOut: shift.clockOut,
+        user: shift.userName ? {
+          name: shift.userName,
+          role: shift.userRole
+        } : null
+      }));
+      
+      res.json(formattedResult);
     } catch (error) {
       next(error);
     }
