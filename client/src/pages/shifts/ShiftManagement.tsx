@@ -61,6 +61,16 @@ export default function ShiftManagement() {
     }
   });
 
+  // Fetch shift history
+  const { data: shiftHistory = [], isLoading: loadingHistory } = useQuery({
+    queryKey: ['/api/shifts/history'],
+    queryFn: async () => {
+      const response = await fetch('/api/shifts/history');
+      if (!response.ok) throw new Error('Failed to fetch shift history');
+      return response.json();
+    }
+  });
+
   // Clock in mutation
   const clockInMutation = useMutation({
     mutationFn: async () => {
@@ -321,6 +331,69 @@ export default function ShiftManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Shift History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Shift History</CardTitle>
+          <CardDescription>Recent completed shifts for all employees</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingHistory ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : shiftHistory.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Clock In</TableHead>
+                  <TableHead>Clock Out</TableHead>
+                  <TableHead>Total Hours</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shiftHistory.slice(0, 10).map((shift: EmployeeShift & { user: { name: string } }) => (
+                  <TableRow key={shift.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        {shift.user?.name || 'Unknown Employee'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(shift.clockIn), 'dd MMM yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(shift.clockIn), 'hh:mm a')}
+                    </TableCell>
+                    <TableCell>
+                      {shift.clockOut ? format(new Date(shift.clockOut), 'hh:mm a') : 'In Progress'}
+                    </TableCell>
+                    <TableCell>
+                      {shift.clockOut ? formatDuration(shift.clockIn, shift.clockOut) : formatDuration(shift.clockIn, null)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={shift.clockOut ? "secondary" : "default"}>
+                        {shift.clockOut ? "Completed" : "Active"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <Calendar className="h-12 w-12 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium mb-1">No Shift History</h3>
+              <p className="text-sm text-muted-foreground">No completed shifts found</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Confirm clock out dialog */}
       <Dialog open={confirmClockOutDialogOpen} onOpenChange={setConfirmClockOutDialogOpen}>

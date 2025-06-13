@@ -62,7 +62,11 @@ import {
   DownloadCloud, 
   UploadCloud,
   Loader2,
-  Cloud
+  Cloud,
+  Wifi,
+  Monitor,
+  Copy,
+  Check
 } from "lucide-react";
 import BackupRestore from "./components/BackupRestore";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +79,12 @@ export default function Settings() {
   const [receiptFooter, setReceiptFooter] = useState("");
   const [defaultTaxRate, setDefaultTaxRate] = useState("5");
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [networkInfo, setNetworkInfo] = useState({
+    currentUrl: "",
+    localIP: "",
+    port: "5000"
+  });
+  const [copiedUrl, setCopiedUrl] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -86,7 +96,7 @@ export default function Settings() {
   
   // Update settings when data is loaded
   useEffect(() => {
-    if (settings) {
+    if (settings && Array.isArray(settings)) {
       settings.forEach((setting: any) => {
         switch (setting.key) {
           case "cafe_name":
@@ -108,6 +118,27 @@ export default function Settings() {
       });
     }
   }, [settings]);
+
+  // Get network information
+  useEffect(() => {
+    setNetworkInfo({
+      currentUrl: window.location.origin,
+      localIP: window.location.hostname,
+      port: window.location.port || "5000"
+    });
+  }, []);
+
+  // Copy URL to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedUrl(true);
+      toast({
+        title: "Copied to clipboard",
+        description: "URL has been copied for sharing with devices",
+      });
+      setTimeout(() => setCopiedUrl(false), 2000);
+    });
+  };
   
   // Update setting mutation
   const updateSettingMutation = useMutation({
@@ -408,6 +439,7 @@ export default function Settings() {
       <Tabs defaultValue="general">
         <TabsList>
           <TabsTrigger value="general">General Settings</TabsTrigger>
+          <TabsTrigger value="network">Network & Access</TabsTrigger>
           <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
         </TabsList>
         
@@ -507,6 +539,110 @@ export default function Settings() {
                 )}
               </Button>
             </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="network" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5" />
+                Network & Device Access
+              </CardTitle>
+              <CardDescription>
+                Access URLs for connecting multiple devices to your café system
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Current Access URL</Label>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      value={networkInfo.currentUrl} 
+                      readOnly 
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(networkInfo.currentUrl)}
+                      className="flex items-center gap-1"
+                    >
+                      {copiedUrl ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use this URL to access the system from any device on your network
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Server Port</Label>
+                    <Input 
+                      value={networkInfo.port} 
+                      readOnly 
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Host Address</Label>
+                    <Input 
+                      value={networkInfo.localIP} 
+                      readOnly 
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-3">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Multi-Device Setup Instructions
+                  </h4>
+                  <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                    <div className="space-y-1">
+                      <p className="font-medium">For Android/iOS devices:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Open Chrome or Safari browser</li>
+                        <li>Navigate to: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{networkInfo.currentUrl}</code></li>
+                        <li>Tap menu → "Add to Home Screen" for app-like experience</li>
+                        <li>Use staff login credentials for role-based access</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-1 mt-3">
+                      <p className="font-medium">For desktop computers:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Open any modern web browser</li>
+                        <li>Navigate to the URL above</li>
+                        <li>Bookmark for quick access</li>
+                        <li>Works on Windows, Mac, and Linux</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">Real-time Synchronization</h4>
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    All connected devices automatically sync in real-time. When one staff member creates an order, 
+                    it instantly appears on all other devices including kitchen displays and manager dashboards.
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-2">Network Requirements</h4>
+                  <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+                    <li>• All devices must be on the same WiFi network</li>
+                    <li>• Stable internet connection recommended for cloud features</li>
+                    <li>• Minimum 10 Mbps bandwidth for 5+ devices</li>
+                    <li>• Router should support 10+ concurrent connections</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
         
