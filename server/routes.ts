@@ -941,35 +941,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { limit = 50 } = req.query;
       
-      // Get shifts with user information using a direct query
-      const result = await db
-        .select({
-          id: employeeShifts.id,
-          userId: employeeShifts.userId,
-          clockIn: employeeShifts.clockIn,
-          clockOut: employeeShifts.clockOut,
-          userName: users.name,
-          userRole: users.role
-        })
-        .from(employeeShifts)
-        .leftJoin(users, eq(employeeShifts.userId, users.id))
-        .where(isNotNull(employeeShifts.clockOut))
-        .orderBy(desc(employeeShifts.clockIn))
-        .limit(parseInt(limit as string));
+      // Get all shifts with user information, including completed ones
+      const shifts = await storage.getEmployeeShiftsByUser(0); // Get all shifts
       
-      // Format the response to include user object for frontend compatibility
-      const formattedResult = result.map(shift => ({
-        id: shift.id,
-        userId: shift.userId,
-        clockIn: shift.clockIn,
-        clockOut: shift.clockOut,
-        user: shift.userName ? {
-          name: shift.userName,
-          role: shift.userRole
-        } : null
-      }));
+      // Get user information for each shift
+      const shiftsWithUsers = await Promise.all(
+        shifts
+          .filter(shift => shift.clockOut !== null) // Only completed shifts
+          .slice(0, parseInt(limit as string))
+          .map(async (shift) => {
+            const user = await storage.getUser(shift.userId);
+            return {
+              ...shift,
+              user: user ? { name: user.name, role: user.role } : null
+            };
+          })
+      );
       
-      res.json(formattedResult);
+      // Sort by clock in time descending
+      shiftsWithUsers.sort((a, b) => new Date(b.clockIn).getTime() - new Date(a.clockIn).getTime());
+      
+      res.json(shiftsWithUsers);
     } catch (error) {
       next(error);
     }
