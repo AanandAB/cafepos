@@ -127,7 +127,14 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- June 13, 2025: Successfully migrated from Replit Agent to Replit environment
+- Enhanced inventory management with automatic expense tracking for purchases and restocking
+- Database schema applied and initialized with default data
+- All core functionality verified working: authentication, POS, inventory, reporting, employee shifts
+
 ## Changelog
 
 Changelog:
-- June 13, 2025. Initial setup
+- June 13, 2025. Initial setup and migration completed

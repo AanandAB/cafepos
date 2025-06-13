@@ -430,6 +430,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const item = await storage.createInventoryItem(result.data);
+      
+      // Automatically create expense record for inventory purchase
+      if (item.cost && item.quantity && item.cost > 0) {
+        const user = req.user as any;
+        const totalCost = item.cost * item.quantity;
+        
+        try {
+          await storage.createExpense({
+            description: `Inventory Purchase: ${item.name} (${item.quantity} ${item.unit})`,
+            amount: totalCost,
+            category: 'inventory',
+            userId: user.id,
+            date: new Date()
+          });
+        } catch (expenseError) {
+          console.warn('Failed to create expense record for inventory:', expenseError);
+          // Continue even if expense creation fails
+        }
+      }
+      
       res.status(201).json(item);
     } catch (error) {
       next(error);
@@ -445,9 +465,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
       }
       
+      // Get current item to compare quantities and costs
+      const currentItem = await storage.getInventoryItem(id);
+      if (!currentItem) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      
       const updatedItem = await storage.updateInventoryItem(id, result.data);
       if (!updatedItem) {
         return res.status(404).json({ message: "Inventory item not found" });
+      }
+      
+      // Create expense record if quantity increased (restocking)
+      if (result.data.quantity && currentItem.quantity && result.data.quantity > currentItem.quantity) {
+        const quantityIncrease = result.data.quantity - currentItem.quantity;
+        const costPerUnit = updatedItem.cost || currentItem.cost || 0;
+        
+        if (costPerUnit > 0) {
+          const user = req.user as any;
+          const totalCost = costPerUnit * quantityIncrease;
+          
+          try {
+            await storage.createExpense({
+              description: `Inventory Restock: ${updatedItem.name} (+${quantityIncrease} ${updatedItem.unit})`,
+              amount: totalCost,
+              category: 'inventory',
+              userId: user.id,
+              date: new Date()
+            });
+          } catch (expenseError) {
+            console.warn('Failed to create expense record for inventory restock:', expenseError);
+            // Continue even if expense creation fails
+          }
+        }
       }
       
       res.json(updatedItem);
