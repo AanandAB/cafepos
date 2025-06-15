@@ -129,8 +129,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- June 14, 2025: Created comprehensive deployment guide for local desktop setup
 - June 13, 2025: Successfully migrated from Replit Agent to Replit environment
 - Enhanced inventory management with automatic expense tracking for purchases and restocking
+- Fixed shift history functionality and inventory expense tracking
 - Database schema applied and initialized with default data
 - All core functionality verified working: authentication, POS, inventory, reporting, employee shifts
 

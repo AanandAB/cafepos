@@ -1,82 +1,157 @@
-# Café Management System - Deployment Guide
+# Café Management System - Local Setup Guide
 
-## System Ready for Production
+This guide will help you download and run the café management system on your desktop computer.
 
-Your café management system is now fully configured and ready for deployment with the following setup:
+## What You'll Need
 
-### Created User Accounts
-- **Manager**: Sarah Johnson (sarah.manager)
-- **Senior Staff**: Mike Chen (mike.staff)  
-- **Staff**: Emma Rodriguez (emma.staff)
-- **Part-time**: James Kumar (james.staff)
+Before starting, make sure you have these installed on your computer:
 
-### System Features Configured
-- Complete menu management with categories
-- Table management for café layout
-- Inventory tracking with low-stock alerts
-- Order processing and payment handling
-- Employee shift management
-- Comprehensive reporting system
-- Data backup and restore functionality
+1. **Node.js** (version 18 or newer)
+   - Download from: https://nodejs.org/
+   - Choose the "LTS" version (recommended)
 
-## Deployment Steps
+2. **PostgreSQL Database** (version 12 or newer)
+   - Download from: https://www.postgresql.org/download/
+   - Remember the password you set during installation
 
-### 1. Production Environment Setup
-The system is currently running in development mode. For production deployment:
+3. **Git** (for downloading the code)
+   - Download from: https://git-scm.com/downloads
 
-1. **Environment Variables**
-   - Database URL is configured
-   - All required services are running
-   - User authentication is operational
+## Step 1: Download the Code
 
-2. **Security Configuration**
-   - Change all default passwords after deployment
-   - Enable HTTPS for production
-   - Configure firewall rules
-   - Set up regular backups
+1. Open your computer's terminal or command prompt
+2. Navigate to where you want to store the project (like your Desktop)
+3. Run this command to download the code:
+   ```bash
+   git clone [YOUR_REPLIT_GIT_URL]
+   cd [PROJECT_FOLDER_NAME]
+   ```
 
-### 3. Hardware Requirements Met
-- **Manager Station**: Full administrative access
-- **Staff Devices**: Order taking and basic management
-- **Network**: Stable internet connectivity required
-- **Backup Systems**: Secondary devices recommended
+   *Note: Replace [YOUR_REPLIT_GIT_URL] with your actual Replit git URL*
 
-### 4. Training Materials Available
-- Complete setup guide for café implementation
-- Daily operations checklist for all staff
-- Comprehensive testing guide for quality assurance
-- Mobile compatibility testing tools
+## Step 2: Install Dependencies
 
-## Next Steps for Production
+1. In the terminal, make sure you're in the project folder
+2. Install all required packages:
+   ```bash
+   npm install
+   ```
+   This will take a few minutes to download everything needed.
 
-1. **Deploy to Production Server**
-   - Use Replit's deployment feature
-   - Configure custom domain if needed
-   - Set up SSL certificates
+## Step 3: Set Up Your Database
 
-2. **Staff Training Implementation**
-   - Distribute login credentials securely
-   - Conduct hands-on training sessions
-   - Practice with sample orders
-   - Test emergency procedures
+1. **Start PostgreSQL** on your computer
+   - On Windows: Use the PostgreSQL service or pgAdmin
+   - On Mac: Use the PostgreSQL app or Homebrew
+   - On Linux: Use systemctl or your package manager
 
-3. **Go-Live Preparation**
-   - Final system testing
-   - Data migration if needed
-   - Staff certification
-   - Customer communication plan
+2. **Create a new database**:
+   - Open your PostgreSQL client (like pgAdmin or psql)
+   - Create a new database called `cafe_management`
 
-## System Access Information
+3. **Create your environment file**:
+   - In your project folder, create a file called `.env`
+   - Add this line (replace with your actual database details):
+   ```
+   DATABASE_URL=postgresql://username:password@localhost:5432/cafe_management
+   ```
+   Replace:
+   - `username` with your PostgreSQL username
+   - `password` with your PostgreSQL password
+   - `cafe_management` with your database name
 
-### Login Portal
-Access the system at your deployment URL with these accounts:
+## Step 4: Set Up the Database Tables
 
-- **Sarah Johnson (Manager)**: sarah.manager / cafe2024!
-- **Mike Chen (Senior Staff)**: mike.staff / staff2024!
-- **Emma Rodriguez (Staff)**: emma.staff / staff2024!
-- **James Kumar (Part-time)**: james.staff / staff2024!
+Run this command to create all the necessary tables:
+```bash
+npm run db:push
+```
 
-### Administrative Access
-- **System Admin**: admin / admin123 (change immediately after setup)
+This will create all the tables needed for the café system.
 
-The system is now ready for your café operations with proper role-based access, comprehensive functionality, and complete documentation for successful implementation.
+## Step 5: Build the Application
+
+Create the production files:
+```bash
+npm run build
+```
+
+## Step 6: Start the Application
+
+Start the server:
+```bash
+npm run start
+```
+
+You should see a message saying the server is running on port 5000.
+
+## Step 7: Open in Your Browser
+
+1. Open your web browser
+2. Go to: `http://localhost:5000`
+3. You should see the café management system login page
+
+## Default Login Details
+
+- **Username**: admin
+- **Password**: admin
+
+## What's Included
+
+Your café management system includes:
+
+- **Point of Sale**: Take orders and process payments
+- **Inventory Management**: Track stock levels and costs
+- **Employee Management**: Clock in/out and shift tracking
+- **Reports**: Sales, expenses, and profit analysis
+- **Menu Management**: Add/edit menu items and categories
+- **Table Management**: Track table occupancy
+- **Expense Tracking**: Monitor all business expenses
+
+## Troubleshooting
+
+### Database Connection Issues
+- Make sure PostgreSQL is running
+- Check your DATABASE_URL in the `.env` file
+- Verify your database exists and credentials are correct
+
+### Port Already in Use
+If port 5000 is busy, you can change it by adding this to your `.env` file:
+```
+PORT=3000
+```
+
+### Build Errors
+- Make sure you have Node.js version 18 or newer
+- Delete `node_modules` folder and run `npm install` again
+
+### Can't Access the Website
+- Make sure the server is running (you should see "serving on port 5000")
+- Try `http://127.0.0.1:5000` instead of localhost
+- Check your firewall settings
+
+## Backup Your Data
+
+To backup your data regularly:
+1. Use PostgreSQL's backup tools (pg_dump)
+2. Or use the built-in backup feature in the application
+
+## Getting Updates
+
+To get the latest updates from Replit:
+```bash
+git pull origin main
+npm install
+npm run db:push
+npm run build
+```
+
+## Need Help?
+
+If you run into issues:
+1. Check that all prerequisites are installed correctly
+2. Make sure your database is running
+3. Verify your `.env` file has the correct database connection string
+4. Check the terminal for error messages
+
+The system is designed to work offline once set up, so you can run your café even without internet connection.
