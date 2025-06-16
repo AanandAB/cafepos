@@ -1,157 +1,146 @@
-# Café Management System - Local Setup Guide
+# Cafe Management System - Desktop Deployment Guide
 
-This guide will help you download and run the café management system on your desktop computer.
+## Prerequisites
 
-## What You'll Need
+Before deploying this application, ensure you have:
 
-Before starting, make sure you have these installed on your computer:
-
-1. **Node.js** (version 18 or newer)
+1. **Node.js** (version 18 or higher)
    - Download from: https://nodejs.org/
-   - Choose the "LTS" version (recommended)
+   - Choose the LTS (Long Term Support) version
+   - During installation, make sure to check "Add to PATH"
 
-2. **PostgreSQL Database** (version 12 or newer)
+2. **PostgreSQL Database** (version 12 or higher)
    - Download from: https://www.postgresql.org/download/
-   - Remember the password you set during installation
+   - Remember the username and password you set during installation
+   - Note the port number (default is 5432)
 
-3. **Git** (for downloading the code)
-   - Download from: https://git-scm.com/downloads
+## Installation Steps
 
-## Step 1: Download the Code
+### 1. Download and Extract
+- Extract the application files to a folder (e.g., `C:\CafeManagement` on Windows)
 
-1. Open your computer's terminal or command prompt
-2. Navigate to where you want to store the project (like your Desktop)
-3. Run this command to download the code:
-   ```bash
-   git clone [YOUR_REPLIT_GIT_URL]
-   cd [PROJECT_FOLDER_NAME]
+### 2. Database Setup
+- Open PostgreSQL command line or pgAdmin
+- Create a new database for the cafe system:
+  ```sql
+  CREATE DATABASE cafe_management;
+  ```
+
+### 3. Environment Configuration
+- Create a file named `.env` in the root folder
+- Add the following content (replace with your database details):
+  ```
+  DATABASE_URL=postgresql://username:password@localhost:5432/cafe_management
+  PGHOST=localhost
+  PGPORT=5432
+  PGDATABASE=cafe_management
+  PGUSER=your_username
+  PGPASSWORD=your_password
+  ```
+
+### 4. Installation and First Run
+
+#### For Windows:
+- Double-click `start-windows.bat`
+- The script will automatically:
+  - Install dependencies
+  - Build the application
+  - Start the server
+
+#### For Mac/Linux:
+- Open Terminal in the application folder
+- Run: `./start-unix.sh`
+- If permission denied, run: `chmod +x start-unix.sh` then `./start-unix.sh`
+
+### 5. Access the Application
+- Open your web browser
+- Go to: `http://localhost:5000`
+- Login with default credentials:
+  - Username: `admin`
+  - Password: `admin123`
+
+## Manual Installation (Alternative)
+
+If the startup scripts don't work, follow these manual steps:
+
+1. Open Command Prompt/Terminal in the application folder
+2. Install dependencies:
    ```
-
-   *Note: Replace [YOUR_REPLIT_GIT_URL] with your actual Replit git URL*
-
-## Step 2: Install Dependencies
-
-1. In the terminal, make sure you're in the project folder
-2. Install all required packages:
-   ```bash
    npm install
    ```
-   This will take a few minutes to download everything needed.
-
-## Step 3: Set Up Your Database
-
-1. **Start PostgreSQL** on your computer
-   - On Windows: Use the PostgreSQL service or pgAdmin
-   - On Mac: Use the PostgreSQL app or Homebrew
-   - On Linux: Use systemctl or your package manager
-
-2. **Create a new database**:
-   - Open your PostgreSQL client (like pgAdmin or psql)
-   - Create a new database called `cafe_management`
-
-3. **Create your environment file**:
-   - In your project folder, create a file called `.env`
-   - Add this line (replace with your actual database details):
+3. Build the application:
    ```
-   DATABASE_URL=postgresql://username:password@localhost:5432/cafe_management
+   npm run build
    ```
-   Replace:
-   - `username` with your PostgreSQL username
-   - `password` with your PostgreSQL password
-   - `cafe_management` with your database name
+4. Start the application:
+   - Windows: `npm run start:windows`
+   - Mac/Linux: `npm run start:unix`
 
-## Step 4: Set Up the Database Tables
+## Daily Operations
 
-Run this command to create all the necessary tables:
-```bash
-npm run db:push
-```
+### Starting the Application
+- Simply run `start-windows.bat` (Windows) or `./start-unix.sh` (Mac/Linux)
+- The application will be available at `http://localhost:5000`
 
-This will create all the tables needed for the café system.
+### Stopping the Application
+- Press `Ctrl+C` in the command window
+- Close the command window
 
-## Step 5: Build the Application
+### Backup Data
+- The application includes automatic backup features
+- Access backup options through the admin panel
+- Regular backups are recommended
 
-Create the production files:
-```bash
-npm run build
-```
-
-## Step 6: Start the Application
-
-Start the server:
-```bash
-npm run start
-```
-
-You should see a message saying the server is running on port 5000.
-
-## Step 7: Open in Your Browser
-
-1. Open your web browser
-2. Go to: `http://localhost:5000`
-3. You should see the café management system login page
-
-## Default Login Details
-
-- **Username**: admin
-- **Password**: admin
-
-## What's Included
-
-Your café management system includes:
-
-- **Point of Sale**: Take orders and process payments
-- **Inventory Management**: Track stock levels and costs
-- **Employee Management**: Clock in/out and shift tracking
-- **Reports**: Sales, expenses, and profit analysis
-- **Menu Management**: Add/edit menu items and categories
-- **Table Management**: Track table occupancy
-- **Expense Tracking**: Monitor all business expenses
+### Updating the System
+- Replace application files with new version
+- Run the startup script to apply updates
+- Database will be automatically updated
 
 ## Troubleshooting
 
-### Database Connection Issues
-- Make sure PostgreSQL is running
-- Check your DATABASE_URL in the `.env` file
-- Verify your database exists and credentials are correct
+### Common Issues
 
-### Port Already in Use
-If port 5000 is busy, you can change it by adding this to your `.env` file:
-```
-PORT=3000
-```
+1. **"Node.js not found"**
+   - Install Node.js from nodejs.org
+   - Restart command prompt after installation
 
-### Build Errors
-- Make sure you have Node.js version 18 or newer
-- Delete `node_modules` folder and run `npm install` again
+2. **"Database connection failed"**
+   - Check PostgreSQL is running
+   - Verify database credentials in `.env` file
+   - Ensure database exists
 
-### Can't Access the Website
-- Make sure the server is running (you should see "serving on port 5000")
-- Try `http://127.0.0.1:5000` instead of localhost
-- Check your firewall settings
+3. **"Port 5000 already in use"**
+   - Close other applications using port 5000
+   - Or modify port in `server/index.ts`
 
-## Backup Your Data
+4. **"Permission denied" (Mac/Linux)**
+   - Run: `chmod +x start-unix.sh`
 
-To backup your data regularly:
-1. Use PostgreSQL's backup tools (pg_dump)
-2. Or use the built-in backup feature in the application
+### Getting Help
+- Check the application logs in the command window
+- Contact support with error messages for assistance
 
-## Getting Updates
+## Security Notes
 
-To get the latest updates from Replit:
-```bash
-git pull origin main
-npm install
-npm run db:push
-npm run build
-```
+- Change default admin password immediately after first login
+- Keep the application updated
+- Regular database backups are essential
+- Restrict network access if needed (firewall settings)
 
-## Need Help?
+## System Requirements
 
-If you run into issues:
-1. Check that all prerequisites are installed correctly
-2. Make sure your database is running
-3. Verify your `.env` file has the correct database connection string
-4. Check the terminal for error messages
+- **RAM**: Minimum 4GB, Recommended 8GB
+- **Storage**: 500MB free space
+- **Network**: Local network access for multiple users
+- **OS**: Windows 10+, macOS 10.14+, or Linux Ubuntu 18.04+
 
-The system is designed to work offline once set up, so you can run your café even without internet connection.
+## Network Access (Multiple Computers)
+
+To access from other computers on the same network:
+
+1. Find the server computer's IP address
+2. On other computers, go to: `http://[SERVER_IP]:5000`
+3. Ensure firewall allows port 5000
+4. All computers must be on the same network
+
+Example: If server IP is 192.168.1.100, access via `http://192.168.1.100:5000`
