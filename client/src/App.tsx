@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -35,6 +36,12 @@ function ProtectedRoute({
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/login");
+    }
+  }, [user, isLoading, setLocation]);
+
   if (isLoading) {
     return <div className="h-screen flex items-center justify-center">
       <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -42,7 +49,6 @@ function ProtectedRoute({
   }
 
   if (!user) {
-    setLocation("/login");
     return null;
   }
 
