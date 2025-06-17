@@ -1,0 +1,27 @@
+{
+  "name": "cafe-management-system",
+  "bin": "dist/index.js",
+  "pkg": {
+    "targets": ["node18-win-x64"],
+    "outputPath": "build",
+    "assets": [
+      "dist/**/*",
+      "shared/**/*",
+      "drizzle.config.ts",
+      "node_modules/pg/**/*",
+      "node_modules/drizzle-orm/**/*",
+      "node_modules/express/**/*",
+      "node_modules/passport/**/*",
+      "node_modules/passport-local/**/*",
+      "node_modules/express-session/**/*",
+      "node_modules/connect-pg-simple/**/*",
+      "node_modules/multer/**/*",
+      "node_modules/zod/**/*",
+      "node_modules/date-fns/**/*",
+      "node_modules/papaparse/**/*",
+      "node_modules/jstat/**/*",
+      "node_modules/ml-regression/**/*",
+      "node_modules/ws/**/*"
+    ]
+  }
+}

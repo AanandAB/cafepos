@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" fill="#2563eb" rx="32"/>
+  <g fill="white">
+    <!-- Coffee cup -->
+    <path d="M80 80h96v12c0 26.51-21.49 48-48 48s-48-21.49-48-48V80z"/>
+    <rect x="80" y="92" width="96" height="80" rx="8"/>
+    <rect x="88" y="100" width="80" height="64" rx="4" fill="#2563eb"/>
+    
+    <!-- Steam lines -->
+    <path d="M100 64v-16M120 64v-16M140 64v-16" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Handle -->
+    <path d="M176 100c12 0 20 8 20 20s-8 20-20 20" stroke="white" stroke-width="4" fill="none"/>
+    
+    <!-- Cafe text -->
+    <text x="128" y="220" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="white">CAFE</text>
+  </g>
+</svg>
