@@ -14,7 +14,7 @@ import {
   insertEmployeeShiftSchema,
   insertSettingSchema,
   insertExpenseSchema
-} from "@shared/schema";
+} from "./schema";
 
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -33,7 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }),
       resave: false,
       saveUninitialized: false,
-      secret: process.env.SESSION_SECRET || "pos-cafe-secret",
+      secret: process.env.SESSION_SECRET || "cafe-session-" + Math.random().toString(36).substring(2, 15),
     })
   );
   
@@ -49,7 +49,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user) {
           return done(null, false, { message: "Incorrect username." });
         }
-        if (user.password !== password) { // In production, use proper hashing
+        const bcrypt = await import('bcryptjs');
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
           return done(null, false, { message: "Incorrect password." });
         }
         if (!user.active) {
@@ -68,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const user = await storage.getUser(id);
+      const user = await storage.getUserById(id);
       done(null, user);
     } catch (err) {
       done(err);

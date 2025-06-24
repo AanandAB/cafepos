@@ -9,7 +9,7 @@ import {
   EmployeeShift, InsertEmployeeShift,
   Expense, InsertExpense,
   Setting, InsertSetting
-} from "@shared/schema";
+} from "./schema";
 import { DB } from './db';
 
 // SQL Server-based storage implementation

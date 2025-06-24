@@ -17,15 +17,17 @@ export async function initializeDatabase() {
     const userCheck = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.username, 'admin'));
     
     if (userCheck[0].count === 0) {
-      // Create admin user
+      // Create admin user with hashed password
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash("admin123", 12);
       await db.insert(users).values({
         name: "Admin",
         username: "admin", 
-        password: "admin123",
+        password: hashedPassword,
         role: "admin",
         active: true
       });
-      console.log('Created admin user');
+      console.log('Created admin user with secure password');
     }
 
     // Check if categories exist
