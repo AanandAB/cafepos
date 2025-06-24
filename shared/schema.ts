@@ -1,23 +1,17 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, foreignKey, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, blob, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-// Enums
-export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'staff', 'cashier']);
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'preparing', 'completed', 'cancelled']);
-export const paymentMethodEnum = pgEnum('payment_method', ['cash', 'card', 'upi', 'other']);
-export const taxTypeEnum = pgEnum('tax_type', ['cgst_sgst', 'igst']);
-export const expenseCategoryEnum = pgEnum('expense_category', ['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other']);
+import { sql } from "drizzle-orm";
 
 // Users Table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: userRoleEnum("role").notNull().default('staff'),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
+  role: text("role", { enum: ['admin', 'manager', 'staff', 'cashier'] }).notNull().default('staff'),
+  active: integer("active", { mode: 'boolean' }).notNull().default(true),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -26,8 +20,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 });
 
 // Categories Table
-export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
+export const categories = sqliteTable("categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
 });
@@ -37,14 +31,14 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 });
 
 // Menu Items Table
-export const menuItems = pgTable("menu_items", {
-  id: serial("id").primaryKey(),
+export const menuItems = sqliteTable("menu_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
-  price: doublePrecision("price").notNull(),
+  price: real("price").notNull(),
   categoryId: integer("category_id").references(() => categories.id),
-  taxRate: doublePrecision("tax_rate").notNull().default(5), // Default GST rate of 5%
-  available: boolean("available").notNull().default(true),
+  taxRate: real("tax_rate").notNull().default(5), // Default GST rate of 5%
+  available: integer("available", { mode: 'boolean' }).notNull().default(true),
   imageUrl: text("image_url"),
   stockQuantity: integer("stock_quantity").default(0), // Stock quantity for inventory tracking
 });
@@ -54,13 +48,13 @@ export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
 });
 
 // Inventory Items Table
-export const inventoryItems = pgTable("inventory_items", {
-  id: serial("id").primaryKey(),
+export const inventoryItems = sqliteTable("inventory_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  quantity: doublePrecision("quantity").notNull().default(0),
+  quantity: real("quantity").notNull().default(0),
   unit: text("unit").notNull(),
-  alertThreshold: doublePrecision("alert_threshold"),
-  cost: doublePrecision("cost"),
+  alertThreshold: real("alert_threshold"),
+  cost: real("cost"),
 });
 
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
@@ -68,11 +62,11 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit
 });
 
 // Tables Table
-export const tables = pgTable("tables", {
-  id: serial("id").primaryKey(),
+export const tables = sqliteTable("tables", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   capacity: integer("capacity"),
-  occupied: boolean("occupied").notNull().default(false),
+  occupied: integer("occupied", { mode: 'boolean' }).notNull().default(false),
 });
 
 export const insertTableSchema = createInsertSchema(tables).omit({
@@ -80,18 +74,18 @@ export const insertTableSchema = createInsertSchema(tables).omit({
 });
 
 // Orders Table
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
+export const orders = sqliteTable("orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   tableId: integer("table_id").references(() => tables.id),
   userId: integer("user_id").references(() => users.id),
-  status: orderStatusEnum("status").notNull().default('pending'),
-  createdAt: timestamp("created_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
-  totalAmount: doublePrecision("total_amount").notNull().default(0),
-  taxAmount: doublePrecision("tax_amount").notNull().default(0),
-  taxType: taxTypeEnum("tax_type").notNull().default('cgst_sgst'),
-  discount: doublePrecision("discount").notNull().default(0),
-  paymentMethod: paymentMethodEnum("payment_method"),
+  status: text("status", { enum: ['pending', 'preparing', 'completed', 'cancelled'] }).notNull().default('pending'),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+  completedAt: text("completed_at"),
+  totalAmount: real("total_amount").notNull().default(0),
+  taxAmount: real("tax_amount").notNull().default(0),
+  taxType: text("tax_type", { enum: ['cgst_sgst', 'igst'] }).notNull().default('cgst_sgst'),
+  discount: real("discount").notNull().default(0),
+  paymentMethod: text("payment_method", { enum: ['cash', 'card', 'upi', 'other'] }),
   customerName: text("customer_name"),
   customerPhone: text("customer_phone"),
   customerGstin: text("customer_gstin"),
@@ -105,13 +99,13 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 });
 
 // Order Items Table
-export const orderItems = pgTable("order_items", {
-  id: serial("id").primaryKey(),
+export const orderItems = sqliteTable("order_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   orderId: integer("order_id").notNull().references(() => orders.id),
   menuItemId: integer("menu_item_id").notNull().references(() => menuItems.id),
   quantity: integer("quantity").notNull().default(1),
-  unitPrice: doublePrecision("unit_price").notNull(),
-  totalPrice: doublePrecision("total_price").notNull(),
+  unitPrice: real("unit_price").notNull(),
+  totalPrice: real("total_price").notNull(),
   notes: text("notes"),
 });
 
@@ -120,11 +114,11 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
 });
 
 // Employee Shifts Table
-export const employeeShifts = pgTable("employee_shifts", {
-  id: serial("id").primaryKey(),
+export const employeeShifts = sqliteTable("employee_shifts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
-  clockIn: timestamp("clock_in").notNull().defaultNow(),
-  clockOut: timestamp("clock_out"),
+  clockIn: text("clock_in").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  clockOut: text("clock_out"),
 });
 
 export const insertEmployeeShiftSchema = createInsertSchema(employeeShifts).omit({
@@ -133,12 +127,12 @@ export const insertEmployeeShiftSchema = createInsertSchema(employeeShifts).omit
 });
 
 // Expenses Table
-export const expenses = pgTable("expenses", {
-  id: serial("id").primaryKey(),
+export const expenses = sqliteTable("expenses", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   description: text("description").notNull(),
-  amount: doublePrecision("amount").notNull(),
-  category: expenseCategoryEnum("category").notNull().default('other'),
-  date: timestamp("date").notNull().defaultNow(),
+  amount: real("amount").notNull(),
+  category: text("category", { enum: ['inventory', 'salary', 'rent', 'utilities', 'equipment', 'maintenance', 'marketing', 'other'] }).notNull().default('other'),
+  date: text("date").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   userId: integer("user_id").references(() => users.id),
   notes: text("notes"),
   receiptUrl: text("receipt_url"),
@@ -149,8 +143,8 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
 });
 
 // Settings Table
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
+export const settings = sqliteTable("settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   key: text("key").notNull().unique(),
   value: text("value"),
   type: text("type").notNull().default('string'),
