@@ -1,0 +1,63 @@
+CAFÉ MANAGEMENT SYSTEM - TECHNICAL DETAILS
+
+====== SYSTEM ARCHITECTURE ======
+
+Application Type: Standalone Windows Executable
+Database: SQLite (local file storage)
+Web Interface: Built-in web server on port 5000
+Authentication: Secure session-based login
+Data Storage: All data stored locally in cafe.db
+
+====== FILE STRUCTURE ======
+
+cafe-management.exe - Main application (37MB)
+cafe.db - Database file (created on first run)
+Logs - Console output shows in command window
+
+====== SECURITY FEATURES ======
+
+- Password encryption using bcrypt
+- Session-based authentication
+- Role-based access control (Admin, Manager, Staff, Cashier)
+- Local data storage (no cloud dependencies)
+- Admin account protection
+
+====== DATABASE TABLES ======
+
+users - Staff accounts and authentication
+categories - Menu item categories
+menu_items - Products with pricing and stock
+tables - Dining tables and capacity
+orders - Sales transactions
+order_items - Individual order line items
+settings - System configuration
+
+====== DEFAULT DATA ======
+
+Admin User: admin / admin123
+Categories: Hot Beverages, Cold Beverages, Snacks, Desserts
+Tables: Table 1-4 plus Takeaway option
+
+====== NETWORK REQUIREMENTS ======
+
+Single Computer: No network needed
+Multiple Computers: Connect to main computer's IP address
+Internet: Not required for daily operations
+Firewall: Allow port 5000 for local network access
+
+====== PERFORMANCE NOTES ======
+
+Startup Time: 15-30 seconds
+Memory Usage: ~50MB RAM
+Disk Space: ~100MB including database
+Concurrent Users: Up to 10 staff members
+Database Size: Grows with transaction history
+
+====== BACKUP STRATEGY ======
+
+Critical File: cafe.db (contains all business data)
+Backup Frequency: Daily recommended
+Backup Method: Copy cafe.db to external drive/cloud
+Recovery: Replace cafe.db file and restart application
+
+The system is designed for reliability and ease of use in busy café environments.
