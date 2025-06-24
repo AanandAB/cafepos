@@ -1,9 +1,4 @@
-import { db } from './db';
-import { 
-  users, categories, menuItems, tables, settings,
-  inventoryItems
-} from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { DB } from './db';
 
 // Initialize the database with default data
 export async function initializeDatabase() {
@@ -11,43 +6,50 @@ export async function initializeDatabase() {
   
   try {
     // Check if admin user exists
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, 'admin'));
-
-    if (!existingUser) {
+    const userCheck = await DB.query('SELECT COUNT(*) as count FROM users WHERE username = @param0', ['admin']);
+    
+    if (userCheck.recordset[0].count === 0) {
       // Create admin user
-      await db.insert(users).values({
-        name: "Admin",
-        username: "admin",
-        password: "admin123", // In a real app, use hashed passwords
-        role: "admin",
-        active: true
-      });
+      await DB.query(`
+        INSERT INTO users (name, username, password, role, active) 
+        VALUES (@param0, @param1, @param2, @param3, @param4)
+      `, ["Admin", "admin", "admin123", "admin", true]);
       console.log('Created admin user');
     }
 
     // Check if categories exist
-    const existingCategories = await db.select().from(categories);
+    const categoryCheck = await DB.query('SELECT COUNT(*) as count FROM categories');
     
-    if (existingCategories.length === 0) {
+    if (categoryCheck.recordset[0].count === 0) {
       // Create default categories
-      const [bevCategory] = await db.insert(categories)
-        .values({ name: 'Hot Beverages', description: 'Coffee, tea, and hot drinks' })
-        .returning();
+      const bevResult = await DB.query(`
+        INSERT INTO categories (name, description) 
+        OUTPUT INSERTED.id
+        VALUES (@param0, @param1)
+      `, ['Hot Beverages', 'Coffee, tea, and hot drinks']);
       
-      const [coldCategory] = await db.insert(categories)
-        .values({ name: 'Cold Beverages', description: 'Cold coffee, shakes, and sodas' })
-        .returning();
+      const coldResult = await DB.query(`
+        INSERT INTO categories (name, description) 
+        OUTPUT INSERTED.id
+        VALUES (@param0, @param1)
+      `, ['Cold Beverages', 'Cold coffee, shakes, and sodas']);
         
-      const [snacksCategory] = await db.insert(categories)
-        .values({ name: 'Snacks', description: 'Light snacks and bites' })
-        .returning();
+      const snacksResult = await DB.query(`
+        INSERT INTO categories (name, description) 
+        OUTPUT INSERTED.id
+        VALUES (@param0, @param1)
+      `, ['Snacks', 'Light snacks and bites']);
         
-      const [dessertsCategory] = await db.insert(categories)
-        .values({ name: 'Desserts', description: 'Sweet treats and desserts' })
-        .returning();
+      const dessertsResult = await DB.query(`
+        INSERT INTO categories (name, description) 
+        OUTPUT INSERTED.id
+        VALUES (@param0, @param1)
+      `, ['Desserts', 'Sweet treats and desserts']);
+      
+      const bevId = bevResult.recordset[0].id;
+      const coldId = coldResult.recordset[0].id;
+      const snacksId = snacksResult.recordset[0].id;
+      const dessertsId = dessertsResult.recordset[0].id;
       
       console.log('Created default categories');
       

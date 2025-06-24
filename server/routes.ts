@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
+import { DB } from "./db";
 import { 
   loginSchema, 
   insertUserSchema,
@@ -13,18 +13,9 @@ import {
   insertOrderItemSchema,
   insertEmployeeShiftSchema,
   insertSettingSchema,
-  insertExpenseSchema,
-  categories,
-  menuItems,
-  inventoryItems,
-  tables,
-  orders,
-  orderItems,
-  expenses,
-  employeeShifts,
-  users
+  insertExpenseSchema
 } from "@shared/schema";
-import { eq, desc, ne, isNotNull } from "drizzle-orm";
+
 import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";

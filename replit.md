@@ -56,7 +56,8 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 - Predictive analytics with TensorFlow.js integration
 
 ### Data Management
-- PostgreSQL database with comprehensive schema
+- SQL Server database with comprehensive schema and optimized performance
+- Raw SQL queries with parameterized statements for security
 - Automated backup and CSV export functionality
 - Data synchronization and real-time updates
 - Google Drive integration for cloud backups
@@ -87,7 +88,7 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 ## External Dependencies
 
 ### Core Dependencies
-- **Database**: PostgreSQL for data persistence
+- **Database**: SQL Server with raw SQL queries for optimal performance
 - **UI Framework**: React with TypeScript
 - **Styling**: Tailwind CSS with Radix UI components
 - **State Management**: TanStack React Query
@@ -105,11 +106,11 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 ## Deployment Strategy
 
 ### Production Environment
-- **Platform**: Replit deployment with autoscale configuration
-- **Database**: PostgreSQL with connection pooling
-- **Build Process**: Vite production build with optimizations
+- **Platform**: Replit deployment with autoscale configuration or Windows executable
+- **Database**: SQL Server with connection pooling and optimized queries
+- **Build Process**: Vite production build with PKG packaging for Windows
 - **Port Configuration**: Port 5000 (internal) mapped to port 80 (external)
-- **Environment Variables**: DATABASE_URL for database connection
+- **Environment Variables**: SQL Server connection parameters (DB_USER, DB_PASSWORD, DB_SERVER, DB_NAME)
 
 ### Development Workflow
 - **Development Server**: `npm run dev` starts both frontend and backend
@@ -129,6 +130,10 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- June 24, 2025: Complete migration to SQL Server database with raw SQL queries
+- June 24, 2025: Created comprehensive Windows Build Guide with PKG packaging
+- June 24, 2025: Added Windows batch scripts for automated building and deployment
+- June 24, 2025: Optimized database operations with parameterized SQL queries
 - June 14, 2025: Created comprehensive deployment guide for local desktop setup
 - June 13, 2025: Successfully migrated from Replit Agent to Replit environment
 - Enhanced inventory management with automatic expense tracking for purchases and restocking
