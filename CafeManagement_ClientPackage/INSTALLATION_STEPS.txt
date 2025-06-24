@@ -1,0 +1,64 @@
+CAFÉ MANAGEMENT SYSTEM - STEP BY STEP INSTALLATION
+
+================================================
+COMPLETE INSTALLATION GUIDE
+================================================
+
+STEP 1: PREPARE YOUR COMPUTER
+□ Windows 7, 8, 10, or 11 required
+□ At least 4GB RAM available
+□ 500MB free disk space
+□ Administrator access to install
+
+STEP 2: EXTRACT FILES
+□ Create folder: C:\CafeManagement
+□ Copy cafe-management.exe to this folder
+□ Copy all included files to same folder
+
+STEP 3: FIRST RUN
+□ Right-click cafe-management.exe
+□ Select "Run as administrator" (first time only)
+□ Windows may show security warning:
+   - Click "More info"
+   - Click "Run anyway"
+□ Wait 30-60 seconds for first startup
+
+STEP 4: ACCESS SYSTEM
+□ Open web browser (Chrome, Firefox, Edge)
+□ Go to: http://localhost:5000
+□ You should see login screen
+
+STEP 5: LOGIN
+□ Username: admin
+□ Password: admin123
+□ Click Login
+
+STEP 6: IMMEDIATE SECURITY SETUP
+□ Go to Settings → User Management
+□ Change admin password NOW
+□ Create accounts for each staff member
+□ Set appropriate roles for each user
+
+STEP 7: BASIC SETUP
+□ Add your menu items (Menu → Add Item)
+□ Set your table numbers (Tables → Manage)
+□ Configure tax rates (Settings → Business)
+□ Test with sample order
+
+STEP 8: DAILY OPERATION
+□ Double-click cafe-management.exe to start
+□ Access via http://localhost:5000
+□ Multiple staff can use different browser tabs
+
+STEP 9: BACKUP SETUP
+□ Note location of cafe.db file
+□ Set daily backup reminder
+□ Test backup/restore process
+
+TROUBLESHOOTING:
+- Port 5000 busy: Close other programs using port
+- Won't start: Run as administrator
+- Can't access: Check Windows Firewall
+- Slow performance: Close unnecessary programs
+
+SUPPORT: Read SETUP_GUIDE.md for detailed help

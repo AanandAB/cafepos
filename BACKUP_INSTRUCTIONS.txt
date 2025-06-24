@@ -1,0 +1,34 @@
+DAILY BACKUP INSTRUCTIONS
+
+=== WHY BACKUP ===
+Your café data (orders, sales, inventory) is stored in 'cafe.db'
+If this file is lost, you lose all your business records!
+
+=== DAILY BACKUP (RECOMMENDED) ===
+1. Close café management system
+2. Find 'cafe.db' file (same folder as .exe)
+3. Copy this file to:
+   - USB drive
+   - External hard drive  
+   - Cloud storage (Google Drive, Dropbox)
+4. Rename copy with date: cafe-backup-2024-12-24.db
+
+=== AUTOMATIC BACKUP (BUILT-IN) ===
+1. Login to system
+2. Go to Settings > Backup
+3. Click 'Export Data' 
+4. Save CSV file to safe location
+5. Set up Google Drive sync (optional)
+
+=== RESTORE DATA ===
+If you need to restore:
+1. Close café system
+2. Replace 'cafe.db' with your backup file
+3. Rename backup to 'cafe.db'
+4. Start system normally
+
+=== WEEKLY BACKUP ===
+Keep 7 daily backups, delete older ones
+Store one weekly backup permanently
+
+REMEMBER: Your business depends on this data!

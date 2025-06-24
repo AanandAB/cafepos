@@ -1,0 +1,35 @@
+CAFÉ MANAGEMENT SYSTEM - QUICK START
+
+====== IMMEDIATE STEPS ======
+
+1. INSTALL:
+   - Copy this entire folder to C:\CafeManagement
+   - Double-click cafe-management.exe
+   - Allow Windows security warning
+
+2. ACCESS:
+   - Open browser: http://localhost:5000
+   - Login: admin / admin123
+   - CHANGE PASSWORD IMMEDIATELY
+
+3. SETUP:
+   - Add your menu items
+   - Set table numbers
+   - Create staff accounts
+
+====== DAILY USE ======
+- Start: Double-click cafe-management.exe
+- Access: http://localhost:5000 in browser
+- Multiple staff: Use different browser tabs
+
+====== BACKUP ======
+- Data file: cafe.db (keep with .exe)
+- Copy cafe.db daily to safe location
+- Use system export for additional backups
+
+====== SUPPORT ======
+- Read SETUP_GUIDE.txt for full instructions
+- Check ADMIN_CREDENTIALS.txt for security setup
+- Follow BACKUP_INSTRUCTIONS.txt for data safety
+
+Ready to serve customers!
