@@ -55,7 +55,6 @@ import { updateMenuItemsTable } from "./update-db";
   // Import and use the proper error handler
   const { errorHandler } = await import("./middleware/validation");
   app.use(errorHandler);
-  });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

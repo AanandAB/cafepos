@@ -1016,7 +1016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(shift => shift.clockOut !== null) // Only completed shifts
           .slice(0, parseInt(limit as string))
           .map(async (shift) => {
-            const user = await storage.getUser(shift.userId);
+            const user = await storage.getUserById(shift.userId);
             return {
               ...shift,
               user: user ? { name: user.name, role: user.role } : null
