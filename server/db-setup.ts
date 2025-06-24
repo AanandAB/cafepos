@@ -1,82 +1,116 @@
 import { DB } from './db';
+import {
+  users, categories, menuItems, tables, settings, inventoryItems,
+  insertUserSchema, insertCategorySchema, insertMenuItemSchema, 
+  insertTableSchema, insertSettingSchema
+} from './schema';
+import { eq, sql } from 'drizzle-orm';
 
 // Initialize the database with default data
 export async function initializeDatabase() {
   console.log('Initializing database...');
   
   try {
-    // Check if admin user exists
-    const userCheck = await DB.query('SELECT COUNT(*) as count FROM users WHERE username = @param0', ['admin']);
+    const db = await DB.getConnection();
     
-    if (userCheck.recordset[0].count === 0) {
+    // Check if admin user exists
+    const userCheck = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.username, 'admin'));
+    
+    if (userCheck[0].count === 0) {
       // Create admin user
-      await DB.query(`
-        INSERT INTO users (name, username, password, role, active) 
-        VALUES (@param0, @param1, @param2, @param3, @param4)
-      `, ["Admin", "admin", "admin123", "admin", true]);
+      await db.insert(users).values({
+        name: "Admin",
+        username: "admin", 
+        password: "admin123",
+        role: "admin",
+        active: true
+      });
       console.log('Created admin user');
     }
 
     // Check if categories exist
-    const categoryCheck = await DB.query('SELECT COUNT(*) as count FROM categories');
+    const categoryCheck = await db.select({ count: sql<number>`count(*)` }).from(categories);
     
-    if (categoryCheck.recordset[0].count === 0) {
+    if (categoryCheck[0].count === 0) {
       // Create default categories
-      const bevResult = await DB.query(`
-        INSERT INTO categories (name, description) 
-        OUTPUT INSERTED.id
-        VALUES (@param0, @param1)
-      `, ['Hot Beverages', 'Coffee, tea, and hot drinks']);
+      const [bevCategory] = await db.insert(categories).values({
+        name: 'Hot Beverages',
+        description: 'Coffee, tea, and hot drinks'
+      }).returning();
       
-      const coldResult = await DB.query(`
-        INSERT INTO categories (name, description) 
-        OUTPUT INSERTED.id
-        VALUES (@param0, @param1)
-      `, ['Cold Beverages', 'Cold coffee, shakes, and sodas']);
+      const [coldCategory] = await db.insert(categories).values({
+        name: 'Cold Beverages', 
+        description: 'Cold coffee, shakes, and sodas'
+      }).returning();
         
-      const snacksResult = await DB.query(`
-        INSERT INTO categories (name, description) 
-        OUTPUT INSERTED.id
-        VALUES (@param0, @param1)
-      `, ['Snacks', 'Light snacks and bites']);
-        
-      const dessertsResult = await DB.query(`
-        INSERT INTO categories (name, description) 
-        OUTPUT INSERTED.id
-        VALUES (@param0, @param1)
-      `, ['Desserts', 'Sweet treats and desserts']);
+      const [snacksCategory] = await db.insert(categories).values({
+        name: 'Snacks',
+        description: 'Sandwiches, pastries, and light bites'
+      }).returning();
       
-      const bevId = bevResult.recordset[0].id;
-      const coldId = coldResult.recordset[0].id;
-      const snacksId = snacksResult.recordset[0].id;
-      const dessertsId = dessertsResult.recordset[0].id;
+      const [dessertsCategory] = await db.insert(categories).values({
+        name: 'Desserts',
+        description: 'Cakes, cookies, and sweet treats'
+      }).returning();
       
       console.log('Created default categories');
       
-      // Create some menu items
+      // Create menu items
       await db.insert(menuItems).values([
         {
           name: "Espresso",
           description: "Strong Italian coffee",
-          price: 60.00,
+          price: 80.00,
           categoryId: bevCategory.id,
-          taxRate: 5,
+          taxRate: 12,
           available: true
         },
         {
           name: "Cappuccino",
-          description: "Espresso with steamed milk and foam",
+          description: "Espresso with steamed milk foam",
           price: 120.00,
           categoryId: bevCategory.id,
-          taxRate: 5,
+          taxRate: 12,
           available: true
         },
         {
-          name: "Iced Latte",
-          description: "Espresso with cold milk and ice",
+          name: "Latte",
+          description: "Espresso with steamed milk",
           price: 140.00,
+          categoryId: bevCategory.id,
+          taxRate: 12,
+          available: true
+        },
+        {
+          name: "Iced Coffee",
+          description: "Cold brew coffee with ice",
+          price: 100.00,
           categoryId: coldCategory.id,
-          taxRate: 5,
+          taxRate: 12,
+          available: true
+        },
+        {
+          name: "Milkshake",
+          description: "Creamy vanilla milkshake",
+          price: 150.00,
+          categoryId: coldCategory.id,
+          taxRate: 12,
+          available: true
+        },
+        {
+          name: "Club Sandwich",
+          description: "Classic club sandwich",
+          price: 200.00,
+          categoryId: snacksCategory.id,
+          taxRate: 18,
+          available: true
+        },
+        {
+          name: "Croissant",
+          description: "Buttery French pastry",
+          price: 80.00,
+          categoryId: snacksCategory.id,
+          taxRate: 18,
           available: true
         },
         {
