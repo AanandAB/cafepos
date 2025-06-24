@@ -9,33 +9,21 @@ Before deploying this application, ensure you have:
    - Choose the LTS (Long Term Support) version
    - During installation, make sure to check "Add to PATH"
 
-2. **PostgreSQL Database** (version 12 or higher)
-   - Download from: https://www.postgresql.org/download/
-   - Remember the username and password you set during installation
-   - Note the port number (default is 5432)
+2. **Database** 
+   - Uses built-in SQLite database (no additional setup required)
+   - Database file will be created automatically as 'cafe.db'
 
 ## Installation Steps
 
 ### 1. Download and Extract
 - Extract the application files to a folder (e.g., `C:\CafeManagement` on Windows)
 
-### 2. Database Setup
-- Open PostgreSQL command line or pgAdmin
-- Create a new database for the cafe system:
-  ```sql
-  CREATE DATABASE cafe_management;
+### 2. Environment Configuration (Optional)
+- Create a file named `.env` in the root folder if you want to customize settings
+- Add any of these optional settings:
   ```
-
-### 3. Environment Configuration
-- Create a file named `.env` in the root folder
-- Add the following content (replace with your database details):
-  ```
-  DATABASE_URL=postgresql://username:password@localhost:5432/cafe_management
-  PGHOST=localhost
-  PGPORT=5432
-  PGDATABASE=cafe_management
-  PGUSER=your_username
-  PGPASSWORD=your_password
+  SESSION_SECRET=your-random-secret-key
+  PORT=5000
   ```
 
 ### 4. Installation and First Run
@@ -104,10 +92,10 @@ If the startup scripts don't work, follow these manual steps:
    - Install Node.js from nodejs.org
    - Restart command prompt after installation
 
-2. **"Database connection failed"**
-   - Check PostgreSQL is running
-   - Verify database credentials in `.env` file
-   - Ensure database exists
+2. **"Database issues"**
+   - Database file 'cafe.db' will be created automatically
+   - Ensure you have write permissions in the application folder
+   - Delete 'cafe.db' to reset to default data
 
 3. **"Port 5000 already in use"**
    - Close other applications using port 5000

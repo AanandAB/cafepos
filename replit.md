@@ -56,8 +56,8 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 - Predictive analytics with TensorFlow.js integration
 
 ### Data Management
-- SQL Server database with comprehensive schema and optimized performance
-- Raw SQL queries with parameterized statements for security
+- SQLite database with comprehensive schema and optimized performance
+- Drizzle ORM with type-safe database operations and parameterized queries
 - Automated backup and CSV export functionality
 - Data synchronization and real-time updates
 - Google Drive integration for cloud backups
@@ -88,11 +88,11 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 ## External Dependencies
 
 ### Core Dependencies
-- **Database**: SQL Server with raw SQL queries for optimal performance
+- **Database**: SQLite with Drizzle ORM for optimal performance and type safety
 - **UI Framework**: React with TypeScript
 - **Styling**: Tailwind CSS with Radix UI components
 - **State Management**: TanStack React Query
-- **Authentication**: Passport.js with session management
+- **Authentication**: Passport.js with bcrypt password hashing and session management
 - **Charts**: Recharts for data visualization
 - **PDF Generation**: Browser-based PDF generation for reports
 - **ML/Analytics**: TensorFlow.js for predictive analytics
@@ -107,10 +107,10 @@ This is a comprehensive Point of Sale (POS) and management system specifically d
 
 ### Production Environment
 - **Platform**: Replit deployment with autoscale configuration or Windows executable
-- **Database**: SQL Server with connection pooling and optimized queries
+- **Database**: SQLite with Drizzle ORM for simplified deployment
 - **Build Process**: Vite production build with PKG packaging for Windows
-- **Port Configuration**: Port 5000 (internal) mapped to port 80 (external)
-- **Environment Variables**: SQL Server connection parameters (DB_USER, DB_PASSWORD, DB_SERVER, DB_NAME)
+- **Port Configuration**: Port 5000 (internal) with network access support
+- **Environment Variables**: SESSION_SECRET for enhanced session security
 
 ### Development Workflow
 - **Development Server**: `npm run dev` starts both frontend and backend
@@ -130,16 +130,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- June 24, 2025: Complete migration to SQL Server database with raw SQL queries
+- December 24, 2024: **SECURITY HARDENING COMPLETED** - Implemented bcrypt password hashing, removed authentication backdoors, added comprehensive input validation and rate limiting
+- December 24, 2024: **DATABASE MIGRATION COMPLETED** - Successfully migrated from SQL Server to SQLite for Replit compatibility
+- December 24, 2024: **DOCUMENTATION UPDATED** - Fixed deployment guides to reflect SQLite usage, corrected system requirements
+- December 24, 2024: **ERROR HANDLING ENHANCED** - Added comprehensive error middleware and validation
+- June 24, 2025: Complete migration to SQL Server database with raw SQL queries  
 - June 24, 2025: Created comprehensive Windows Build Guide with PKG packaging
 - June 24, 2025: Added Windows batch scripts for automated building and deployment
 - June 24, 2025: Optimized database operations with parameterized SQL queries
 - June 14, 2025: Created comprehensive deployment guide for local desktop setup
 - June 13, 2025: Successfully migrated from Replit Agent to Replit environment
-- Enhanced inventory management with automatic expense tracking for purchases and restocking
-- Fixed shift history functionality and inventory expense tracking
-- Database schema applied and initialized with default data
-- All core functionality verified working: authentication, POS, inventory, reporting, employee shifts
 
 ## Changelog
 

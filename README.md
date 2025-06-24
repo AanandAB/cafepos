@@ -27,7 +27,7 @@ A comprehensive cafe management application with inventory tracking, order manag
 ## System Requirements
 
 - Node.js 18+ 
-- PostgreSQL 12+
+- SQLite (built-in, no setup required)
 - 4GB RAM minimum
 - 500MB storage space
 
@@ -45,6 +45,6 @@ For detailed installation and troubleshooting, see `DEPLOYMENT_GUIDE.md`
 ## Technology Stack
 
 - Frontend: React, TypeScript, Tailwind CSS
-- Backend: Node.js, Express, PostgreSQL
-- Database: Drizzle ORM with PostgreSQL
+- Backend: Node.js, Express, SQLite
+- Database: Drizzle ORM with SQLite
 - Authentication: Passport.js with sessions

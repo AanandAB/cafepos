@@ -20,6 +20,8 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { errorHandler, validateRequest, validateIdParam, validateFileUpload, rateLimit } from "./middleware/validation";
+import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session store
@@ -99,13 +101,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(403).json({ message: "Forbidden - Insufficient privileges" });
   };
   
-  // Authentication routes
-  app.post('/api/auth/login', (req, res, next) => {
-    try {
-      const result = loginSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
+  // Configure secure file upload
+  const upload = multer({
+    dest: 'uploads/',
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+      files: 1
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['text/csv', 'application/json'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type'));
       }
+    }
+  });
+
+  // Authentication routes with rate limiting
+  app.post('/api/auth/login', rateLimit(5, 15 * 60 * 1000), validateRequest(loginSchema), (req, res, next) => {
+    try {
       
       passport.authenticate('local', (err: any, user: any, info: any) => {
         if (err) return next(err);
@@ -145,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(401).json({ message: "Not authenticated" });
   });
   
-  // User routes
+  // User routes with validation
   app.get('/api/users', isAuthenticated, hasRole(['admin', 'manager']), async (req, res, next) => {
     try {
       const users = await storage.getUsers();
@@ -162,14 +177,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/users', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+  app.post('/api/users', isAuthenticated, hasRole(['admin']), validateRequest(insertUserSchema), async (req, res, next) => {
     try {
-      const result = insertUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
-      }
+      // Hash password before storing
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(req.body.password, 12);
+      const userData = { ...req.body, password: hashedPassword };
       
-      const user = await storage.createUser(result.data);
+      const user = await storage.createUser(userData);
       res.status(201).json({
         id: user.id,
         name: user.name,
@@ -179,20 +194,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: user.createdAt
       });
     } catch (error) {
+      if (error.message && error.message.includes('UNIQUE constraint failed')) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
       next(error);
     }
   });
   
-  app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), async (req, res, next) => {
+  app.put('/api/users/:id', isAuthenticated, hasRole(['admin']), validateIdParam, validateRequest(insertUserSchema.partial()), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const result = insertUserSchema.partial().safeParse(req.body);
+      let userData = req.body;
       
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid request data", errors: result.error.format() });
+      // Hash password if being updated
+      if (userData.password) {
+        const bcrypt = await import('bcryptjs');
+        userData.password = await bcrypt.hash(userData.password, 12);
       }
       
-      const updatedUser = await storage.updateUser(id, result.data);
+      const updatedUser = await storage.updateUser(id, userData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -206,6 +226,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: updatedUser.createdAt
       });
     } catch (error) {
+      if (error.message && error.message.includes('UNIQUE constraint failed')) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
       next(error);
     }
   });
