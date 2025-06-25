@@ -1,0 +1,159 @@
+@echo off
+title Cafe Management System - Duck Installer
+color 0A
+cls
+
+echo.
+echo     ___      ___    ___   ___  _  _____ _   _  _____ _____ 
+echo    ^|   \    ^| ^|^|    ^|   \ ^| ^|^| ^|\ \  ^|  ^|^| \  ^|^|__   ^|
+echo    ^|    \   ^| ^|^|    ^|    \^| ^|^| ^| \ \ ^|  ^|^|  \ ^|   ^|  ^|
+echo    ^|     \  ^| ^|^|    ^|     ^| ^|^| ^|  \ \^|  ^|^|   \^|   ^|  ^|
+echo    ^|  ^|\  \ ^| ^|^|    ^|     ^| ^|^| ^|   \    ^|^|    ^|   ^|  ^|
+echo    ^|  ^| \  \^| ^|^|____^|     ^| ^|^| ^|    \   ^|^|    ^|   ^|  ^|
+echo    ^|__^|  \____^|^|____^|_____^| ^|^|_^|     \  ^|^|____^|   ^|__^|
+echo.
+echo    DUCKINST - Cafe Management Auto Installer
+echo.
+echo ========================================
+echo   CAFE MANAGEMENT SYSTEM INSTALLER  
+echo ========================================
+echo.
+
+timeout /t 2 /nobreak >nul
+
+echo [DUCK] Checking system requirements...
+timeout /t 1 /nobreak >nul
+
+REM Check if Node.js is installed
+node --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [DUCK] QUACK! Node.js is missing!
+    echo.
+    echo The duck says: Install Node.js first!
+    echo 1. Go to https://nodejs.org
+    echo 2. Download and install Node.js
+    echo 3. Restart your computer  
+    echo 4. Run DUCKINST again
+    echo.
+    echo [DUCK] Installation aborted - missing Node.js
+    pause
+    exit /b 1
+)
+
+echo [DUCK] QUACK! Node.js found: 
+node --version
+timeout /t 1 /nobreak >nul
+
+REM Check if we're in the right directory
+if not exist "package.json" (
+    echo [DUCK] QUACK QUACK! Wrong location!
+    echo The duck can't find package.json
+    echo Make sure you're in the cafe management folder
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [DUCK] QUACK! Found cafe management files
+timeout /t 1 /nobreak >nul
+
+echo.
+echo [DUCK] Starting auto-installation...
+echo The duck is working hard for you!
+echo.
+
+echo [1/5] Duck is installing dependencies...
+call npm install --silent
+if %errorlevel% neq 0 (
+    echo [DUCK] QUACK! Dependencies failed to install
+    pause
+    exit /b 1
+)
+echo [DUCK] Dependencies installed successfully!
+timeout /t 1 /nobreak >nul
+
+echo.
+echo [2/5] Duck is building the application...
+call npm run build --silent
+if %errorlevel% neq 0 (
+    echo [DUCK] QUACK! Build process failed
+    pause
+    exit /b 1
+)
+echo [DUCK] Application built successfully!
+timeout /t 1 /nobreak >nul
+
+echo.
+echo [3/5] Duck is setting up the database...
+if not exist "cafe.db" (
+    echo [DUCK] Creating fresh database...
+    type nul > cafe.db
+)
+echo [DUCK] Database ready!
+timeout /t 1 /nobreak >nul
+
+echo.
+echo [4/5] Duck is creating startup files...
+
+REM Create the startup batch file
+echo @echo off > START_CAFE.bat
+echo title Cafe Management System >> START_CAFE.bat
+echo color 0A >> START_CAFE.bat
+echo cls >> START_CAFE.bat
+echo echo. >> START_CAFE.bat
+echo echo ======================================== >> START_CAFE.bat
+echo echo    CAFE MANAGEMENT SYSTEM RUNNING >> START_CAFE.bat
+echo echo ======================================== >> START_CAFE.bat
+echo echo. >> START_CAFE.bat
+echo echo System starting... >> START_CAFE.bat
+echo echo Login: admin / admin123 >> START_CAFE.bat
+echo echo Web: http://localhost:5000 >> START_CAFE.bat
+echo echo. >> START_CAFE.bat
+echo echo Press Ctrl+C to stop the system >> START_CAFE.bat
+echo echo. >> START_CAFE.bat
+echo cd /d "%%~dp0" >> START_CAFE.bat
+echo npm run start >> START_CAFE.bat
+echo pause >> START_CAFE.bat
+
+echo [DUCK] Startup files created!
+timeout /t 1 /nobreak >nul
+
+echo.
+echo [5/5] Duck is finalizing installation...
+timeout /t 2 /nobreak >nul
+
+cls
+echo.
+echo     ___      ___    ___   ___  _  _____ _   _  _____ _____ 
+echo    ^|   \    ^| ^|^|    ^|   \ ^| ^|^| ^|\ \  ^|  ^|^| \  ^|^|__   ^|
+echo    ^|    \   ^| ^|^|    ^|    \^| ^|^| ^| \ \ ^|  ^|^|  \ ^|   ^|  ^|
+echo    ^|     \  ^| ^|^|    ^|     ^| ^|^| ^|  \ \^|  ^|^|   \^|   ^|  ^|
+echo    ^|  ^|\  \ ^| ^|^|    ^|     ^| ^|^| ^|   \    ^|^|    ^|   ^|  ^|
+echo    ^|  ^| \  \^| ^|^|____^|     ^| ^|^| ^|    \   ^|^|    ^|   ^|  ^|
+echo    ^|__^|  \____^|^|____^|_____^| ^|^|_^|     \  ^|^|____^|   ^|__^|
+echo.
+echo.
+echo ========================================
+echo   INSTALLATION COMPLETE! QUACK!
+echo ========================================
+echo.
+echo The duck has successfully installed your cafe system!
+echo.
+echo TO START YOUR CAFE:
+echo 1. Double-click START_CAFE.bat
+echo 2. Wait 30 seconds for startup
+echo 3. Open browser: http://localhost:5000  
+echo 4. Login: admin / admin123
+echo.
+echo FILES CREATED:
+echo - START_CAFE.bat (your main launcher)
+echo - cafe.db (your database)
+echo.
+echo DAILY USE:
+echo - Morning: Double-click START_CAFE.bat
+echo - Evening: Close the command window
+echo.
+echo The duck wishes you success with your cafe!
+echo QUACK QUACK! 🦆
+echo.
+pause
