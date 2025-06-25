@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Base colors - Light mode */
+  --background: 30 30% 97%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  
+  /* Primary - Café brown */
+  --primary: 30 70% 30%;
+  --primary-foreground: 60 9.1% 97.8%;
+  
+  /* Secondary - Light cream */
+  --secondary: 40 60% 90%;
+  --secondary-foreground: 24 9.8% 10%;
+  
+  /* Accent - Soft orange */
+  --accent: 24 90% 65%;
+  --accent-foreground: 220 36% 12%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 24 90% 60%;
+  
+  /* Chart colors - earthy palette */
+  --chart-1: 30 70% 45%;
+  --chart-2: 16 80% 60%; 
+  --chart-3: 45 90% 55%;
+  --chart-4: 100 40% 60%;
+  --chart-5: 200 70% 55%;
+  
+  /* Sidebar specific */
+  --sidebar-background: 25 30% 20%;
+  --sidebar-foreground: 40 10% 90%;
+  --sidebar-primary: 24 90% 65%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 30 70% 45%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 25 20% 30%;
+  --sidebar-ring: 24 90% 65%;
+  
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Base colors - Dark mode */
+  --background: 20 14.3% 4.1%;
+  --foreground: 60 9.1% 97.8%;
+  --muted: 12 6.5% 15.1%;
+  --muted-foreground: 24 5.4% 63.9%;
+  --popover: 20 14.3% 4.1%;
+  --popover-foreground: 60 9.1% 97.8%;
+  --card: 20 14.3% 4.1%;
+  --card-foreground: 60 9.1% 97.8%;
+  --border: 12 6.5% 15.1%;
+  --input: 12 6.5% 15.1%;
+  
+  /* Primary - Coffee brown */
+  --primary: 30 60% 45%;
+  --primary-foreground: 60 9.1% 97.8%;
+  
+  /* Secondary - Deep brown */
+  --secondary: 32 32% 20%;
+  --secondary-foreground: 60 9.1% 97.8%;
+  
+  /* Accent - Muted orange */
+  --accent: 24 80% 50%;
+  --accent-foreground: 60 9.1% 97.8%;
+  
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 24 80% 50%;
+  
+  /* Chart colors - earthy palette */
+  --chart-1: 30 70% 45%;
+  --chart-2: 16 80% 60%;
+  --chart-3: 45 90% 55%;
+  --chart-4: 100 40% 60%;
+  --chart-5: 200 70% 55%;
+  
+  /* Sidebar specific - darker for dark mode */
+  --sidebar-background: 25 30% 15%;
+  --sidebar-foreground: 40 10% 90%;
+  --sidebar-primary: 24 90% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 30 70% 40%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 25 20% 25%;
+  --sidebar-ring: 24 90% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom cafe-themed styles */
+.table-item {
+  @apply relative transition-all duration-200 transform hover:scale-105;
+}
+
+.table-item.occupied {
+  @apply bg-red-100 dark:bg-red-900;
+}
+
+.table-item.available {
+  @apply bg-green-100 dark:bg-green-900;
+}
+
+/* Invoice/receipt styles */
+.receipt-paper {
+  @apply bg-white text-black font-mono p-6 max-w-md mx-auto shadow-lg;
+  background-image: linear-gradient(transparent 0px, rgba(0,0,0,0.05) 1px);
+  background-size: 100% 2em;
+}
+
+.receipt-header {
+  @apply text-center font-bold text-lg mb-4;
+}
+
+.receipt-divider {
+  @apply my-2 border-dashed border-b border-gray-300;
+}
+
+/* Coffee themed loading animation */
+.coffee-loading {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: hsl(var(--primary));
+  border-radius: 50% 50% 0 0;
+  animation: steam 2s infinite linear;
+}
+
+.coffee-loading::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 12px;
+  background: hsl(var(--primary));
+  bottom: -6px;
+  right: -6px;
+  border-radius: 0 0 12px 12px;
+}
+
+@keyframes steam {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(10deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+/* Print styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-content, .print-content * {
+    visibility: visible;
+  }
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

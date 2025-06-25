@@ -1,0 +1,19 @@
+CAFE MANAGEMENT - SIMPLE START
+
+1. INSTALL NODE.JS:
+   - Download from https://nodejs.org
+   - Install Node.js version 18 or higher
+
+2. START SYSTEM:
+   - Double-click start-cafe.bat
+   - Wait for "serving on port 5000" message
+
+3. ACCESS:
+   - Open browser: http://localhost:5000
+   - Login: admin / admin123
+
+4. DAILY USE:
+   - Run start-cafe.bat each morning
+   - Close command window to stop
+
+NO COMPLEX SETUP NEEDED!
