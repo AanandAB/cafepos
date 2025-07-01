@@ -1,34 +1,12 @@
-import 'package:hive/hive.dart';
-
-part 'menu_item.g.dart';
-
-@HiveType(typeId: 2)
-class MenuItem extends HiveObject {
-  @HiveField(0)
+class MenuItem {
   int? id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   String? description;
-
-  @HiveField(3)
   double price;
-
-  @HiveField(4)
   int? categoryId;
-
-  @HiveField(5)
   double taxRate;
-
-  @HiveField(6)
   bool available;
-
-  @HiveField(7)
   String? imageUrl;
-
-  @HiveField(8)
   int stockQuantity;
 
   MenuItem({

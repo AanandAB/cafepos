@@ -1,19 +1,7 @@
-import 'package:hive/hive.dart';
-
-part 'table.g.dart';
-
-@HiveType(typeId: 9)
-class TableModel extends HiveObject {
-  @HiveField(0)
+class TableModel {
   int? id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   int? capacity;
-
-  @HiveField(3)
   bool occupied;
 
   TableModel({

@@ -1,28 +1,10 @@
-import 'package:hive/hive.dart';
-
-part 'user.g.dart';
-
-@HiveType(typeId: 0)
-class User extends HiveObject {
-  @HiveField(0)
+class User {
   int? id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   String username;
-
-  @HiveField(3)
   String password;
-
-  @HiveField(4)
   UserRole role;
-
-  @HiveField(5)
   bool active;
-
-  @HiveField(6)
   DateTime createdAt;
 
   User({
@@ -60,14 +42,9 @@ class User extends HiveObject {
   }
 }
 
-@HiveType(typeId: 1)
 enum UserRole {
-  @HiveField(0)
   admin,
-  @HiveField(1)
   manager,
-  @HiveField(2)
   staff,
-  @HiveField(3)
   cashier,
 }

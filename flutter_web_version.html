@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café Management System - Flutter Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Login Screen Styles */
+        .login-screen {
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: #8B4513;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: #666;
+            margin-bottom: 32px;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #8B4513;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 24px;
+            transition: background-color 0.3s;
+        }
+        
+        .login-button:hover {
+            background: #A0522D;
+        }
+        
+        .demo-info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #2196f3;
+            font-size: 12px;
+            color: #1976d2;
+        }
+        
+        /* Main App Styles */
+        .app-header {
+            background: #8B4513;
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .user-menu:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: white;
+            color: #8B4513;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            padding: 20px;
+            min-height: calc(100vh - 140px);
+        }
+        
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            height: 60px;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+            background: none;
+            color: #666;
+        }
+        
+        .nav-item.active {
+            color: #8B4513;
+            background: #f5f5f5;
+        }
+        
+        .nav-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+        }
+        
+        /* Screen Styles */
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 16px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+        
+        .action-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        
+        .menu-item {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .menu-item-image {
+            height: 120px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #ccc;
+        }
+        
+        .menu-item-content {
+            padding: 16px;
+        }
+        
+        .menu-item-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .menu-item-desc {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .menu-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+        
+        .menu-item-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        
+        .add-button {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+        
+        .add-button:hover {
+            background: #A0522D;
+        }
+        
+        .add-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .stock-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .stock-high { background: #4caf50; }
+        .stock-low { background: #ff9800; }
+        .stock-out { background: #f44336; }
+        
+        .cart-fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        
+        .cart-fab:hover {
+            transform: scale(1.1);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .cart-item-info {
+            flex: 1;
+        }
+        
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quantity-button {
+            background: #8B4513;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .quantity-display {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .remove-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .cart-total {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .process-button {
+            width: 100%;
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .order-id {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .order-status {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            background: #4caf50;
+        }
+        
+        .order-details {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .order-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B4513;
+            text-align: right;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 12px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="app">
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <div class="login-card">
+                <div class="login-logo">☕</div>
+                <div class="login-title">Café Management</div>
+                <div class="login-subtitle">Point of Sale System</div>
+                
+                <div class="input-group">
+                    <input type="text" class="input-field" id="username" placeholder="Username">
+                </div>
+                <div class="input-group">
+                    <input type="password" class="input-field" id="password" placeholder="Password">
+                </div>
+                
+                <button class="login-button" onclick="login()">Login</button>
+                
+                <div class="demo-info">
+                    <strong>Demo Credentials</strong><br>
+                    Username: admin<br>
+                    Password: password
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main App -->
+        <div class="hidden" id="mainApp">
+            <header class="app-header">
+                <div class="header-title" id="headerTitle">Café Dashboard</div>
+                <div class="user-menu" onclick="showUserMenu()">
+                    <div class="user-avatar">A</div>
+                    <span>Administrator</span>
+                    <span>▼</span>
+                </div>
+            </header>
+            
+            <main class="main-content">
+                <!-- Dashboard Screen -->
+                <div class="screen active" id="dashboardScreen">
+                    <div class="section-title">Today's Overview</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="color: #4caf50;">💰</div>
+                            <div class="stat-value" id="todaySales">₹0.00</div>
+                            <div class="stat-label">Today's Sales</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="color: #ff9800;">🛒</div>
+                            <div class="stat-value" id="totalOrders">0</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-title">Quick Actions</div>
+                    <div class="actions-grid">
+                        <button class="action-card" onclick="switchScreen(1)">
+                            <div class="stat-icon" style="color: #8B4513;">🛒</div>
+                            <div>New Order</div>
+                        </button>
+                        <button class="action-card" onclick="switchScreen(2)">
+                            <div class="stat-icon" style="color: #2196f3;">📋</div>
+                            <div>Menu</div>
+                        </button>
+                        <button class="action-card" onclick="switchScreen(3)">
+                            <div class="stat-icon" style="color: #4caf50;">📊</div>
+                            <div>Orders</div>
+                        </button>
+                        <button class="action-card" onclick="alert('Reports feature coming soon!')">
+                            <div class="stat-icon" style="color: #9c27b0;">📈</div>
+                            <div>Reports</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- POS Screen -->
+                <div class="screen" id="posScreen">
+                    <div class="section-title">Point of Sale</div>
+                    <div class="menu-grid" id="menuGrid">
+                        <!-- Menu items will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Menu Screen -->
+                <div class="screen" id="menuScreen">
+                    <div class="section-title">Menu Management</div>
+                    <div id="menuList">
+                        <!-- Menu list will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Orders Screen -->
+                <div class="screen" id="ordersScreen">
+                    <div class="section-title">Orders</div>
+                    <div id="ordersList">
+                        <!-- Orders will be inserted here -->
+                    </div>
+                </div>
+            </main>
+            
+            <nav class="bottom-nav">
+                <button class="nav-item active" onclick="switchScreen(0)">
+                    <div class="nav-icon">🏠</div>
+                    <div class="nav-label">Dashboard</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(1)">
+                    <div class="nav-icon">🛒</div>
+                    <div class="nav-label">POS</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(2)">
+                    <div class="nav-icon">📋</div>
+                    <div class="nav-label">Menu</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(3)">
+                    <div class="nav-icon">📊</div>
+                    <div class="nav-label">Orders</div>
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Cart FAB -->
+        <button class="cart-fab hidden" id="cartFab" onclick="showCart()">
+            🛒
+            <span id="cartBadge" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: none;">0</span>
+        </button>
+        
+        <!-- Cart Modal -->
+        <div class="modal" id="cartModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Order Summary</h2>
+                    <button class="close-button" onclick="hideCart()">&times;</button>
+                </div>
+                <div id="cartItems">
+                    <!-- Cart items will be inserted here -->
+                </div>
+                <div class="cart-total" id="cartTotal">Total: ₹0.00</div>
+                <button class="process-button" onclick="processOrder()">Process Order</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App State
+        let currentScreen = 0;
+        let isLoggedIn = false;
+        let currentUser = 'Administrator';
+        let cart = [];
+        let orders = [];
+        
+        // Sample Menu Data
+        const menuItems = [
+            { id: 1, name: 'Espresso', description: 'Rich and bold coffee', price: 80, category: 'Beverages', stock: 50 },
+            { id: 2, name: 'Cappuccino', description: 'Coffee with steamed milk foam', price: 120, category: 'Beverages', stock: 45 },
+            { id: 3, name: 'Sandwich', description: 'Grilled club sandwich', price: 180, category: 'Food', stock: 25 },
+            { id: 4, name: 'Chocolate Cake', description: 'Rich chocolate layer cake', price: 150, category: 'Desserts', stock: 15 }
+        ];
+        
+        const screenTitles = ['Café Dashboard', 'Point of Sale', 'Menu Management', 'Orders'];
+        
+        // Login Function
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'admin' && password === 'password') {
+                isLoggedIn = true;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                initializeApp();
+            } else {
+                alert('Invalid credentials. Please use admin/password');
+            }
+        }
+        
+        // Initialize App
+        function initializeApp() {
+            renderMenuGrid();
+            renderMenuList();
+            updateDashboard();
+            updateCartDisplay();
+        }
+        
+        // Screen Navigation
+        function switchScreen(screenIndex) {
+            currentScreen = screenIndex;
+            
+            // Update header title
+            document.getElementById('headerTitle').textContent = screenTitles[screenIndex];
+            
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            const screens = ['dashboardScreen', 'posScreen', 'menuScreen', 'ordersScreen'];
+            document.getElementById(screens[screenIndex]).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                item.classList.toggle('active', index === screenIndex);
+            });
+            
+            // Update cart FAB visibility
+            const cartFab = document.getElementById('cartFab');
+            if (screenIndex === 1 && cart.length > 0) {
+                cartFab.classList.remove('hidden');
+            } else {
+                cartFab.classList.add('hidden');
+            }
+            
+            // Refresh screen content
+            if (screenIndex === 3) {
+                renderOrdersList();
+            }
+        }
+        
+        // Render Menu Grid for POS
+        function renderMenuGrid() {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = '';
+            
+            menuItems.forEach(item => {
+                const stockClass = item.stock > 10 ? 'stock-high' : item.stock > 0 ? 'stock-low' : 'stock-out';
+                const stockText = item.stock > 0 ? `Stock: ${item.stock}` : 'Out of Stock';
+                
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                menuItem.innerHTML = `
+                    <div class="menu-item-image">🍽️</div>
+                    <div class="menu-item-content">
+                        <div class="menu-item-name">${item.name}</div>
+                        <div class="menu-item-desc">${item.description}</div>
+                        <div class="stock-badge ${stockClass}">${stockText}</div>
+                        <div class="menu-item-footer">
+                            <div class="menu-item-price">₹${item.price.toFixed(2)}</div>
+                            <button class="add-button" onclick="addToCart(${item.id})" ${item.stock === 0 ? 'disabled' : ''}>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(menuItem);
+            });
+        }
+        
+        // Render Menu List for Management
+        function renderMenuList() {
+            const list = document.getElementById('menuList');
+            list.innerHTML = '';
+            
+            menuItems.forEach(item => {
+                const stockClass = item.stock > 10 ? 'stock-high' : item.stock > 0 ? 'stock-low' : 'stock-out';
+                
+                const menuItem = document.createElement('div');
+                menuItem.className = 'order-card';
+                menuItem.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 60px; height: 60px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🍽️</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; margin-bottom: 4px;">${item.name}</div>
+                            <div style="color: #666; margin-bottom: 8px;">${item.description}</div>
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <span style="font-weight: bold; color: #8B4513;">₹${item.price.toFixed(2)}</span>
+                                <span class="stock-badge ${stockClass}">Stock: ${item.stock}</span>
+                            </div>
+                        </div>
+                        <button style="background: #8B4513; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;" onclick="alert('Edit feature coming soon')">Edit</button>
+                    </div>
+                `;
+                list.appendChild(menuItem);
+            });
+        }
+        
+        // Cart Functions
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item || item.stock === 0) return;
+            
+            const existingIndex = cart.findIndex(cartItem => cartItem.id === itemId);
+            
+            if (existingIndex !== -1) {
+                cart[existingIndex].quantity++;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+            
+            updateCartDisplay();
+            
+            // Show success message
+            showMessage(`${item.name} added to cart`, 'success');
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartDisplay();
+            renderCartItems();
+        }
+        
+        function updateQuantity(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) {
+                removeFromCart(index);
+            } else {
+                updateCartDisplay();
+                renderCartItems();
+            }
+        }
+        
+        function updateCartDisplay() {
+            const cartFab = document.getElementById('cartFab');
+            const cartBadge = document.getElementById('cartBadge');
+            
+            if (cart.length > 0) {
+                cartBadge.textContent = cart.length;
+                cartBadge.style.display = 'flex';
+                cartBadge.style.alignItems = 'center';
+                cartBadge.style.justifyContent = 'center';
+                
+                if (currentScreen === 1) {
+                    cartFab.classList.remove('hidden');
+                }
+            } else {
+                cartBadge.style.display = 'none';
+                cartFab.classList.add('hidden');
+            }
+        }
+        
+        function showCart() {
+            document.getElementById('cartModal').classList.add('active');
+            renderCartItems();
+        }
+        
+        function hideCart() {
+            document.getElementById('cartModal').classList.remove('active');
+        }
+        
+        function renderCartItems() {
+            const container = document.getElementById('cartItems');
+            const totalElement = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Your cart is empty</div>';
+                totalElement.textContent = 'Total: ₹0.00';
+                return;
+            }
+            
+            container.innerHTML = '';
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <div class="cart-item-info">
+                        <div style="font-weight: bold;">${item.name}</div>
+                        <div style="color: #666;">₹${item.price.toFixed(2)} each</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="quantity-button" onclick="updateQuantity(${index}, -1)">-</button>
+                        <div class="quantity-display">${item.quantity}</div>
+                        <button class="quantity-button" onclick="updateQuantity(${index}, 1)">+</button>
+                        <button class="remove-button" onclick="removeFromCart(${index})">Remove</button>
+                    </div>
+                `;
+                container.appendChild(cartItem);
+            });
+            
+            totalElement.textContent = `Total: ₹${total.toFixed(2)}`;
+        }
+        
+        function processOrder() {
+            if (cart.length === 0) return;
+            
+            const order = {
+                id: orders.length + 1,
+                items: [...cart],
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                date: new Date().toLocaleString(),
+                status: 'Completed'
+            };
+            
+            orders.push(order);
+            cart = [];
+            
+            updateCartDisplay();
+            updateDashboard();
+            hideCart();
+            
+            showMessage('Order processed successfully!', 'success');
+        }
+        
+        // Render Orders List
+        function renderOrdersList() {
+            const container = document.getElementById('ordersList');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                        <div style="font-size: 18px;">No orders yet</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            orders.slice().reverse().forEach(order => {
+                const orderCard = document.createElement('div');
+                orderCard.className = 'order-card';
+                orderCard.innerHTML = `
+                    <div class="order-header">
+                        <div class="order-id">Order #${order.id}</div>
+                        <div class="order-status">${order.status}</div>
+                    </div>
+                    <div class="order-details">
+                        Date: ${order.date}<br>
+                        Items: ${order.items.length}
+                    </div>
+                    <div class="order-total">₹${order.total.toFixed(2)}</div>
+                `;
+                container.appendChild(orderCard);
+            });
+        }
+        
+        // Update Dashboard
+        function updateDashboard() {
+            const todaySales = orders.reduce((sum, order) => sum + order.total, 0);
+            document.getElementById('todaySales').textContent = `₹${todaySales.toFixed(2)}`;
+            document.getElementById('totalOrders').textContent = orders.length;
+        }
+        
+        // User Menu
+        function showUserMenu() {
+            if (confirm('Do you want to logout?')) {
+                logout();
+            }
+        }
+        
+        function logout() {
+            isLoggedIn = false;
+            currentScreen = 0;
+            cart = [];
+            
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        
+        // Show Messages
+        function showMessage(message, type) {
+            const messageEl = document.createElement('div');
+            messageEl.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 2000;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            `;
+            messageEl.textContent = message;
+            
+            document.body.appendChild(messageEl);
+            
+            setTimeout(() => {
+                document.body.removeChild(messageEl);
+            }, 3000);
+        }
+        
+        // Handle Enter key on login
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') login();
+            });
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') login();
+            });
+        });
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

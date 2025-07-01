@@ -1,16 +1,6 @@
-import 'package:hive/hive.dart';
-
-part 'category.g.dart';
-
-@HiveType(typeId: 3)
-class Category extends HiveObject {
-  @HiveField(0)
+class Category {
   int? id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   String? description;
 
   Category({

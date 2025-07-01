@@ -1,55 +1,19 @@
-import 'package:hive/hive.dart';
-
-part 'order.g.dart';
-
-@HiveType(typeId: 4)
-class Order extends HiveObject {
-  @HiveField(0)
+class Order {
   int? id;
-
-  @HiveField(1)
   int? tableId;
-
-  @HiveField(2)
   int? userId;
-
-  @HiveField(3)
   OrderStatus status;
-
-  @HiveField(4)
   DateTime createdAt;
-
-  @HiveField(5)
   DateTime? completedAt;
-
-  @HiveField(6)
   double totalAmount;
-
-  @HiveField(7)
   double taxAmount;
-
-  @HiveField(8)
   TaxType taxType;
-
-  @HiveField(9)
   double discount;
-
-  @HiveField(10)
   PaymentMethod? paymentMethod;
-
-  @HiveField(11)
   String? customerName;
-
-  @HiveField(12)
   String? customerPhone;
-
-  @HiveField(13)
   String? customerGstin;
-
-  @HiveField(14)
   String? invoiceNumber;
-
-  @HiveField(15)
   List<OrderItem> items;
 
   Order({
@@ -115,27 +79,13 @@ class Order extends HiveObject {
   }
 }
 
-@HiveType(typeId: 5)
-class OrderItem extends HiveObject {
-  @HiveField(0)
+class OrderItem {
   int? id;
-
-  @HiveField(1)
   int orderId;
-
-  @HiveField(2)
   int menuItemId;
-
-  @HiveField(3)
   int quantity;
-
-  @HiveField(4)
   double unitPrice;
-
-  @HiveField(5)
   double totalPrice;
-
-  @HiveField(6)
   String? notes;
 
   OrderItem({
@@ -173,34 +123,21 @@ class OrderItem extends HiveObject {
   }
 }
 
-@HiveType(typeId: 6)
 enum OrderStatus {
-  @HiveField(0)
   pending,
-  @HiveField(1)
   preparing,
-  @HiveField(2)
   completed,
-  @HiveField(3)
   cancelled,
 }
 
-@HiveType(typeId: 7)
 enum TaxType {
-  @HiveField(0)
   cgstSgst,
-  @HiveField(1)
   igst,
 }
 
-@HiveType(typeId: 8)
 enum PaymentMethod {
-  @HiveField(0)
   cash,
-  @HiveField(1)
   card,
-  @HiveField(2)
   upi,
-  @HiveField(3)
   other,
 }
