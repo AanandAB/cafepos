@@ -1,0 +1,4 @@
+  // Flutter-style Café Management App route
+  app.get('/flutter-cafe', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/flutter-cafe.html'));
+  });

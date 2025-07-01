@@ -2341,6 +2341,433 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Flutter-style Café Management App route
+  app.get('/flutter-cafe', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café Management System - Flutter Version</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333; }
+        .app-container { max-width: 1200px; margin: 0 auto; background-color: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .login-screen { background: linear-gradient(135deg, #8B4513, #D2691E); height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        .login-logo { width: 80px; height: 80px; background: #8B4513; border-radius: 50%; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+        .login-title { font-size: 24px; font-weight: bold; color: #8B4513; margin-bottom: 8px; }
+        .login-subtitle { color: #666; margin-bottom: 32px; }
+        .input-field { width: 100%; padding: 12px 16px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 16px; }
+        .input-field:focus { outline: none; border-color: #8B4513; }
+        .login-button { width: 100%; padding: 12px; background: #8B4513; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 24px; }
+        .login-button:hover { background: #A0522D; }
+        .demo-info { background: #e3f2fd; padding: 12px; border-radius: 8px; border: 1px solid #2196f3; font-size: 12px; color: #1976d2; }
+        .app-header { background: #8B4513; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header-title { font-size: 20px; font-weight: bold; }
+        .user-menu { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 12px; border-radius: 8px; }
+        .user-menu:hover { background: rgba(255,255,255,0.1); }
+        .user-avatar { width: 32px; height: 32px; background: white; color: #8B4513; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .main-content { padding: 20px; min-height: calc(100vh - 140px); }
+        .bottom-nav { background: white; border-top: 1px solid #ddd; display: flex; height: 60px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: none; background: none; color: #666; }
+        .nav-item.active { color: #8B4513; background: #f5f5f5; }
+        .nav-item:hover { background: #f5f5f5; }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+        .nav-label { font-size: 12px; }
+        .screen { display: none; } .screen.active { display: block; }
+        .section-title { font-size: 24px; font-weight: bold; color: #8B4513; margin-bottom: 16px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-icon { font-size: 32px; margin-bottom: 12px; }
+        .stat-value { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+        .stat-label { color: #666; font-size: 14px; }
+        .actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+        .action-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; cursor: pointer; transition: transform 0.3s; border: none; }
+        .action-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+        .menu-item { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s; }
+        .menu-item:hover { transform: translateY(-2px); }
+        .menu-item-image { height: 120px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #ccc; }
+        .menu-item-content { padding: 16px; }
+        .menu-item-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+        .menu-item-desc { color: #666; font-size: 12px; margin-bottom: 8px; }
+        .menu-item-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .menu-item-price { font-size: 18px; font-weight: bold; color: #8B4513; }
+        .add-button { background: #8B4513; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .add-button:hover { background: #A0522D; }
+        .add-button:disabled { background: #ccc; cursor: not-allowed; }
+        .stock-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; color: white; }
+        .stock-high { background: #4caf50; } .stock-low { background: #ff9800; } .stock-out { background: #f44336; }
+        .cart-fab { position: fixed; bottom: 80px; right: 20px; background: #8B4513; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        .cart-fab:hover { transform: scale(1.1); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .close-button { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .cart-item-info { flex: 1; }
+        .cart-item-controls { display: flex; align-items: center; gap: 8px; }
+        .quantity-button { background: #8B4513; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .quantity-display { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 40px; text-align: center; }
+        .remove-button { background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .cart-total { text-align: center; margin: 20px 0; font-size: 18px; font-weight: bold; }
+        .process-button { width: 100%; background: #8B4513; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .order-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 16px; margin-bottom: 16px; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .order-id { font-size: 18px; font-weight: bold; }
+        .order-status { padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: bold; color: white; background: #4caf50; }
+        .order-details { color: #666; margin-bottom: 8px; }
+        .order-total { font-size: 18px; font-weight: bold; color: #8B4513; text-align: right; }
+        .hidden { display: none !important; }
+        @media (max-width: 768px) { .main-content { padding: 12px; } .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } .menu-grid { grid-template-columns: 1fr; } .modal-content { width: 95%; margin: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="login-screen" id="loginScreen">
+            <div class="login-card">
+                <div class="login-logo">☕</div>
+                <div class="login-title">Café Management</div>
+                <div class="login-subtitle">Flutter-Style POS System</div>
+                <input type="text" class="input-field" id="username" placeholder="Username" value="admin">
+                <input type="password" class="input-field" id="password" placeholder="Password" value="password">
+                <button class="login-button" onclick="login()">Login</button>
+                <div class="demo-info"><strong>Ready to Use!</strong><br>Just click Login to start</div>
+            </div>
+        </div>
+        
+        <div class="hidden" id="mainApp">
+            <header class="app-header">
+                <div class="header-title" id="headerTitle">Café Dashboard</div>
+                <div class="user-menu" onclick="showUserMenu()">
+                    <div class="user-avatar">A</div>
+                    <span>Administrator</span>
+                    <span>▼</span>
+                </div>
+            </header>
+            
+            <main class="main-content">
+                <div class="screen active" id="dashboardScreen">
+                    <div class="section-title">Today's Overview</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="color: #4caf50;">💰</div>
+                            <div class="stat-value" id="todaySales">₹0.00</div>
+                            <div class="stat-label">Today's Sales</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="color: #ff9800;">🛒</div>
+                            <div class="stat-value" id="totalOrders">0</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                    </div>
+                    <div class="section-title">Quick Actions</div>
+                    <div class="actions-grid">
+                        <button class="action-card" onclick="switchScreen(1)">
+                            <div class="stat-icon" style="color: #8B4513;">🛒</div>
+                            <div>New Order</div>
+                        </button>
+                        <button class="action-card" onclick="switchScreen(2)">
+                            <div class="stat-icon" style="color: #2196f3;">📋</div>
+                            <div>Menu</div>
+                        </button>
+                        <button class="action-card" onclick="switchScreen(3)">
+                            <div class="stat-icon" style="color: #4caf50;">📊</div>
+                            <div>Orders</div>
+                        </button>
+                        <button class="action-card" onclick="alert('Advanced reports available in full version!')">
+                            <div class="stat-icon" style="color: #9c27b0;">📈</div>
+                            <div>Reports</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="screen" id="posScreen">
+                    <div class="section-title">Point of Sale</div>
+                    <div class="menu-grid" id="menuGrid"></div>
+                </div>
+                
+                <div class="screen" id="menuScreen">
+                    <div class="section-title">Menu Management</div>
+                    <div id="menuList"></div>
+                </div>
+                
+                <div class="screen" id="ordersScreen">
+                    <div class="section-title">Orders</div>
+                    <div id="ordersList"></div>
+                </div>
+            </main>
+            
+            <nav class="bottom-nav">
+                <button class="nav-item active" onclick="switchScreen(0)">
+                    <div class="nav-icon">🏠</div>
+                    <div class="nav-label">Dashboard</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(1)">
+                    <div class="nav-icon">🛒</div>
+                    <div class="nav-label">POS</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(2)">
+                    <div class="nav-icon">📋</div>
+                    <div class="nav-label">Menu</div>
+                </button>
+                <button class="nav-item" onclick="switchScreen(3)">
+                    <div class="nav-icon">📊</div>
+                    <div class="nav-label">Orders</div>
+                </button>
+            </nav>
+        </div>
+        
+        <button class="cart-fab hidden" id="cartFab" onclick="showCart()">
+            🛒
+            <span id="cartBadge" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: none;">0</span>
+        </button>
+        
+        <div class="modal" id="cartModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Order Summary</h2>
+                    <button class="close-button" onclick="hideCart()">&times;</button>
+                </div>
+                <div id="cartItems"></div>
+                <div class="cart-total" id="cartTotal">Total: ₹0.00</div>
+                <button class="process-button" onclick="processOrder()">Process Order</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScreen = 0, isLoggedIn = false, cart = [], orders = [];
+        const menuItems = [
+            { id: 1, name: 'Espresso', description: 'Rich and bold coffee shot', price: 80, category: 'Beverages', stock: 50 },
+            { id: 2, name: 'Cappuccino', description: 'Coffee with steamed milk foam', price: 120, category: 'Beverages', stock: 45 },
+            { id: 3, name: 'Latte', description: 'Smooth espresso with steamed milk', price: 140, category: 'Beverages', stock: 40 },
+            { id: 4, name: 'Club Sandwich', description: 'Grilled triple-decker sandwich', price: 180, category: 'Food', stock: 25 },
+            { id: 5, name: 'Pasta Alfredo', description: 'Creamy white sauce pasta', price: 220, category: 'Food', stock: 20 },
+            { id: 6, name: 'Chocolate Cake', description: 'Rich chocolate layer cake', price: 150, category: 'Desserts', stock: 15 }
+        ];
+        const screenTitles = ['Café Dashboard', 'Point of Sale', 'Menu Management', 'Orders'];
+
+        window.onload = function() { renderMenuGrid(); renderMenuList(); updateDashboard(); };
+
+        function login() {
+            if (document.getElementById('username').value === 'admin' && document.getElementById('password').value === 'password') {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                showMessage('Welcome to Flutter-Style Café Management!', 'success');
+            } else {
+                showMessage('Invalid credentials!', 'error');
+            }
+        }
+
+        function switchScreen(screenIndex) {
+            currentScreen = screenIndex;
+            document.getElementById('headerTitle').textContent = screenTitles[screenIndex];
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            ['dashboardScreen', 'posScreen', 'menuScreen', 'ordersScreen'][screenIndex] && 
+                document.getElementById(['dashboardScreen', 'posScreen', 'menuScreen', 'ordersScreen'][screenIndex]).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach((item, i) => item.classList.toggle('active', i === screenIndex));
+            document.getElementById('cartFab').classList.toggle('hidden', !(screenIndex === 1 && cart.length > 0));
+            if (screenIndex === 3) renderOrdersList();
+        }
+
+        function renderMenuGrid() {
+            const grid = document.getElementById('menuGrid');
+            grid.innerHTML = '';
+            menuItems.forEach(item => {
+                const stockClass = item.stock > 10 ? 'stock-high' : item.stock > 0 ? 'stock-low' : 'stock-out';
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = \`
+                    <div class="menu-item-image">🍽️</div>
+                    <div class="menu-item-content">
+                        <div class="menu-item-name">\${item.name}</div>
+                        <div class="menu-item-desc">\${item.description}</div>
+                        <div class="stock-badge \${stockClass}">Stock: \${item.stock}</div>
+                        <div class="menu-item-footer">
+                            <div class="menu-item-price">₹\${item.price}</div>
+                            <button class="add-button" onclick="addToCart(\${item.id})" \${item.stock === 0 ? 'disabled' : ''}>Add</button>
+                        </div>
+                    </div>
+                \`;
+                grid.appendChild(div);
+            });
+        }
+
+        function renderMenuList() {
+            const list = document.getElementById('menuList');
+            list.innerHTML = '';
+            menuItems.forEach(item => {
+                const stockClass = item.stock > 10 ? 'stock-high' : item.stock > 0 ? 'stock-low' : 'stock-out';
+                const div = document.createElement('div');
+                div.className = 'order-card';
+                div.innerHTML = \`
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 60px; height: 60px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🍽️</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold;">\${item.name}</div>
+                            <div style="color: #666; margin: 4px 0;">\${item.description}</div>
+                            <div style="display: flex; gap: 16px;">
+                                <span style="font-weight: bold; color: #8B4513;">₹\${item.price}</span>
+                                <span class="stock-badge \${stockClass}">Stock: \${item.stock}</span>
+                            </div>
+                        </div>
+                        <button style="background: #8B4513; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Edit</button>
+                    </div>
+                \`;
+                list.appendChild(div);
+            });
+        }
+
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if (!item || item.stock === 0) return;
+            const existingIndex = cart.findIndex(c => c.id === itemId);
+            if (existingIndex !== -1) cart[existingIndex].quantity++; else cart.push({ ...item, quantity: 1 });
+            updateCartDisplay();
+            showMessage(\`\${item.name} added to cart\`, 'success');
+        }
+
+        function updateCartDisplay() {
+            const badge = document.getElementById('cartBadge');
+            if (cart.length > 0) {
+                badge.textContent = cart.length;
+                badge.style.display = 'flex';
+                badge.style.alignItems = 'center';
+                badge.style.justifyContent = 'center';
+                if (currentScreen === 1) document.getElementById('cartFab').classList.remove('hidden');
+            } else {
+                badge.style.display = 'none';
+                document.getElementById('cartFab').classList.add('hidden');
+            }
+        }
+
+        function showCart() {
+            document.getElementById('cartModal').classList.add('active');
+            renderCartItems();
+        }
+
+        function hideCart() {
+            document.getElementById('cartModal').classList.remove('active');
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cartItems');
+            const totalElement = document.getElementById('cartTotal');
+            if (cart.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Your cart is empty</div>';
+                totalElement.textContent = 'Total: ₹0.00';
+                return;
+            }
+            container.innerHTML = '';
+            let total = 0;
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = \`
+                    <div class="cart-item-info">
+                        <div style="font-weight: bold;">\${item.name}</div>
+                        <div style="color: #666;">₹\${item.price} each</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="quantity-button" onclick="updateQuantity(\${index}, -1)">-</button>
+                        <div class="quantity-display">\${item.quantity}</div>
+                        <button class="quantity-button" onclick="updateQuantity(\${index}, 1)">+</button>
+                        <button class="remove-button" onclick="removeFromCart(\${index})">Remove</button>
+                    </div>
+                \`;
+                container.appendChild(div);
+            });
+            totalElement.textContent = \`Total: ₹\${total.toFixed(2)}\`;
+        }
+
+        function updateQuantity(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) removeFromCart(index); else { updateCartDisplay(); renderCartItems(); }
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartDisplay();
+            renderCartItems();
+        }
+
+        function processOrder() {
+            if (cart.length === 0) return;
+            const order = {
+                id: orders.length + 1,
+                items: [...cart],
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                date: new Date().toLocaleString(),
+                status: 'Completed'
+            };
+            orders.push(order);
+            cart = [];
+            updateCartDisplay();
+            updateDashboard();
+            hideCart();
+            showMessage('Order processed successfully!', 'success');
+        }
+
+        function renderOrdersList() {
+            const container = document.getElementById('ordersList');
+            if (orders.length === 0) {
+                container.innerHTML = \`<div style="text-align: center; padding: 40px; color: #666;"><div style="font-size: 48px; margin-bottom: 16px;">📊</div><div style="font-size: 18px;">No orders yet</div><div style="margin-top: 8px;">Start processing orders in the POS section!</div></div>\`;
+                return;
+            }
+            container.innerHTML = '';
+            orders.slice().reverse().forEach(order => {
+                const div = document.createElement('div');
+                div.className = 'order-card';
+                div.innerHTML = \`
+                    <div class="order-header">
+                        <div class="order-id">Order #\${order.id}</div>
+                        <div class="order-status">\${order.status}</div>
+                    </div>
+                    <div class="order-details">Date: \${order.date}<br>Items: \${order.items.length}</div>
+                    <div class="order-total">₹\${order.total.toFixed(2)}</div>
+                \`;
+                container.appendChild(div);
+            });
+        }
+
+        function updateDashboard() {
+            const todaySales = orders.reduce((sum, order) => sum + order.total, 0);
+            document.getElementById('todaySales').textContent = \`₹\${todaySales.toFixed(2)}\`;
+            document.getElementById('totalOrders').textContent = orders.length;
+        }
+
+        function showUserMenu() {
+            if (confirm('Do you want to logout?')) {
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                cart = [];
+                currentScreen = 0;
+                showMessage('Logged out successfully', 'success');
+            }
+        }
+
+        function showMessage(message, type) {
+            const div = document.createElement('div');
+            div.style.cssText = \`position: fixed; top: 20px; right: 20px; background: \${type === 'success' ? '#4caf50' : '#f44336'}; color: white; padding: 12px 20px; border-radius: 8px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.3);\`;
+            div.textContent = message;
+            document.body.appendChild(div);
+            setTimeout(() => document.body.removeChild(div), 3000);
+        }
+
+        document.addEventListener('keypress', function(e) { if (e.key === 'Enter') login(); });
+        document.addEventListener('click', function(e) { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); });
+    </script>
+</body>
+</html>
+    `);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
